@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Patcher in Browser</title>
-	<meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
+    <title>Patcher in Browser</title>
+    <meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
     <style>
         input, textarea { display: block; width: 300px; margin-bottom: 20px; }
         body, body * { background: #444; color: #ccc; }
@@ -10,6 +10,7 @@
 </head>
 <body>
     <h2><a href="https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser">Patcher in Browser</a></h2>
+    <h3 id="name"></h3>
     <label for="patches">Offset and bytes (in hexadecimal)</label>
     <textarea id="patches" rows=6>
         BADC0DE:  41   42 53   54
@@ -57,6 +58,17 @@
                 URL.revokeObjectURL(url);
             };
         }());
+        try {
+            // example: #{"name":"a_patcher_name","patches":"BADC0DE.41.42.53.54_F00DFACE.CA.FE.BA.BE"}
+            var paramStr = decodeURI(location.hash.slice(1))
+            if (paramStr && paramStr[0]==='{') {
+                var params = JSON.parse(paramStr)
+                document.getElementById('name').innerText = params.name
+                document.getElementById('patches').value = params.patches.replaceAll('.',' ').replaceAll('_','\n')
+            }
+        } catch(ex) {
+            console.warn('Error: cannot parse parameters from URL hash', ex)
+        }
     </script>
 </body>
 </html>
