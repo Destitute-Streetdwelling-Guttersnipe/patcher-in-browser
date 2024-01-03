@@ -12,23 +12,21 @@
     <h2>Patcher in Browser</h2>
     <label for="patches">Offset and bytes (in hexadecimal)</label>
     <textarea id="patches">
-        1BADCAFE: 41 42 53 54
-        DEADFOOD: 31 32 63 64
+    1BADCAFE: 41 42 53 54
+    DEADFOOD: 31 32 63 64
     </textarea>
     <label for="fileInput">Select file to patch</label>
-    <input type="file" id="fileInput" />
-    <button id="applyBtn">Apply patch</button>
+    <input type="file" id="fileInput" onchange="readFile(this)" />
+    <button id="applyBtn" onclick="patchAndSave()">Apply patch</button>
     <script type="text/javascript">
-        var filename
-        var bytes = new Uint8Array()
-        document.getElementById('fileInput').onchange = readFile
-        document.getElementById('applyBtn').onclick = patchAndSave
-        function patchAndSave(e) {
+        var filename, bytes
+        function patchAndSave() {
             var error = applyPatch(bytes)
             if (error) alert(error)
             else saveBlob(new Blob([bytes]), filename)
         }
         function applyPatch(bytes) {
+            if (!bytes) return 'no file selected' 
             const patches = document.getElementById('patches').value.trim()
             for (var line of patches.split("\n")) {
                 if (!line.trim().match(/^[0-9a-f]+:( +[0-9a-f]{2})*$/i)) return 'invalid number: ' + line
@@ -37,8 +35,8 @@
                 bytes.set(patch, offset)
             }
         }
-        async function readFile(e) {
-            const file = e.target.files[0]
+        async function readFile(fileInput) {
+            const file = fileInput.files[0]
             filename = file.name
             bytes = await new Promise(resolve => {
                 const reader = new FileReader()
