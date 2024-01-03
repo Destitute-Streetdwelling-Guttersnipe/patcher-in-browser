@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Patcher in Browser</title>
+	<meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
+    <style>
+        input, textarea { display: block; min-width: 250px; margin-bottom: 20px; }
+        body, body * { background: #444; color: #ccc; }
+    </style>
+</head>
+<body>
+    <h2>Patcher in Browser</h2>
+    <label for="patches">Offset and bytes (in hexadecimal)</label>
+    <textarea id="patches">
+        1BADCAFE: 41 42 53 54
+        DEADFOOD: 31 32 63 64
+    </textarea>
+    <label for="fileInput">Select file to patch</label>
+    <input type="file" id="fileInput" />
+    <button id="applyBtn">Apply patch</button>
+    <script type="text/javascript">
+        var filename
+        var bytes = new Uint8Array()
+        document.getElementById('fileInput').onchange = readFile
+        document.getElementById('applyBtn').onclick = patchAndSave
+        function patchAndSave(e) {
+            var error = applyPatch(bytes)
+            if (error) alert(error)
+            else saveBlob(new Blob([bytes]), filename)
+        }
+        function applyPatch(bytes) {
+            const patches = document.getElementById('patches').value.trim()
+            for (var line of patches.split("\n")) {
+                if (!line.trim().match(/^[0-9a-f]+:( +[0-9a-f]{2})*$/i)) return 'invalid number: ' + line
+                const [offset, ...patch] = line.trim().split(/:? +/).map(i => parseInt(i, 16))
+                if (offset + patch.length > bytes.length) return 'offset too big: ' + line
+                bytes.set(patch, offset)
+            }
+        }
+        async function readFile(e) {
+            const file = e.target.files[0]
+            filename = file.name
+            bytes = await new Promise(resolve => {
+                const reader = new FileReader()
+                reader.readAsArrayBuffer(file)
+                reader.onload = () => resolve(new Uint8Array(reader.result))
+            })
+        }
+        var saveBlob = (function () {
+            var a = document.createElement("a");
+            document.body.appendChild(a);
+            a.style = "display: none";
+            return function (blob, fileName) {
+                var url = URL.createObjectURL(blob);
+                a.href = url;
+                a.download = fileName;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+        }());
+    </script>
+</body>
+</html>
