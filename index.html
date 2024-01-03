@@ -4,19 +4,19 @@
 	<title>Patcher in Browser</title>
 	<meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
     <style>
-        input, textarea { display: block; min-width: 250px; margin-bottom: 20px; }
+        input, textarea { display: block; width: 250px; margin-bottom: 20px; }
         body, body * { background: #444; color: #ccc; }
     </style>
 </head>
 <body>
     <h2>Patcher in Browser</h2>
     <label for="patches">Offset and bytes (in hexadecimal)</label>
-    <textarea id="patches">
+    <textarea id="patches" rows=6>
     1BADC0DE: 41 42 53 54
     DEADBEEF: 31 32 63 64
     F00DFACE: CA FE BA BE
     </textarea>
-    <label for="fileInput">Select file to patch</label>
+    <label for="fileInput">File to be patched</label>
     <input type="file" id="fileInput" onchange="readFile(this)" />
     <button id="applyBtn" onclick="patchAndSave()">Apply patch</button>
     <script type="text/javascript">
@@ -30,8 +30,8 @@
             if (!bytes) return 'no file selected' 
             const patches = document.getElementById('patches').value.trim()
             for (var line of patches.split("\n")) {
-                if (!line.trim().match(/^[0-9a-f]+:( +[0-9a-f]{2})*$/i)) return 'invalid number: ' + line
-                const [offset, ...patch] = line.trim().split(/:? +/).map(i => parseInt(i, 16))
+                if (!line.trim().match(/^[0-9a-f]+\s*:?(\s+[0-9a-f]{2})*$/i)) return 'wrong format: ' + line
+                const [offset, ...patch] = line.trim().split(/\s*:?\s+/).map(i => parseInt(i, 16))
                 if (offset + patch.length > bytes.length) return 'offset too big: ' + line
                 bytes.set(patch, offset)
             }
