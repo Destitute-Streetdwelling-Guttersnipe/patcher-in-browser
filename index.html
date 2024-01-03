@@ -12,8 +12,9 @@
     <h2>Patcher in Browser</h2>
     <label for="patches">Offset and bytes (in hexadecimal)</label>
     <textarea id="patches">
-    1BADCAFE: 41 42 53 54
-    DEADFOOD: 31 32 63 64
+    1BADC0DE: 41 42 53 54
+    DEADBEEF: 31 32 63 64
+    F00DFACE: CA FE BA BE
     </textarea>
     <label for="fileInput">Select file to patch</label>
     <input type="file" id="fileInput" onchange="readFile(this)" />
