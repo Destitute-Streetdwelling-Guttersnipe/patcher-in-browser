@@ -1,5 +1,5 @@
 # patcher-in-browser
-a patcher in web browser
+a patcher in web browser for anyone who is CLIphobia
 
 Use offset and bytes (as hexadecimal number) in the following formats:
 
