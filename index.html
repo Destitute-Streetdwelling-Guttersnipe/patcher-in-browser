@@ -28,8 +28,9 @@
             else saveBlob(new Blob([bytes]), filename)
         }
         function applyPatch(bytes) {
-            if (!bytes) return 'no file selected' 
             const patches = document.getElementById('patches').value.trim()
+            location.hash = '#' + JSON.stringify({name: 'no_name', patches: patches.replaceAll(' ', '-').replaceAll('\n', '.')})
+            if (!bytes) return 'no file selected' 
             for (var line of patches.split("\n")) {
                 if (!line.trim().match(/^(0x)?[0-9a-f]+\s*:?(\s+(0x)?[0-9a-f]{2})*$/i)) return 'wrong format: ' + line
                 const [offset, ...patch] = line.trim().split(/\s*:?\s+/).map(i => parseInt(i, 16))
@@ -59,12 +60,12 @@
             };
         }());
         try {
-            // example: #{"name":"a_patcher_name","patches":"BADC0DE.41.42.53.54_F00DFACE.CA.FE.BA.BE"}
+            // example: #{"name":"a_patcher_name","patches":"BADC0DE-41-42-53-54.F00DFACE-CA-FE-BA-BE"}
             var paramStr = decodeURI(location.hash.slice(1))
             if (paramStr && paramStr[0]==='{') {
                 var params = JSON.parse(paramStr)
                 document.getElementById('name').innerText = params.name
-                document.getElementById('patches').value = params.patches.replaceAll('.',' ').replaceAll('_','\n')
+                document.getElementById('patches').value = params.patches.replaceAll('-',' ').replaceAll('.','\n')
             }
         } catch(ex) {
             console.warn('Error: cannot parse parameters from URL hash', ex)
