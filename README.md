@@ -1,5 +1,5 @@
 # patcher-in-browser
-a patcher in web browser for anyone who is CLIphobia
+This is for the CLIphobia who wanna patch but don't wanna touch the command prompt.
 
 Use offset and bytes (as hexadecimal number) in the following formats:
 
