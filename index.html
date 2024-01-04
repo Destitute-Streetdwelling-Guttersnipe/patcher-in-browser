@@ -19,7 +19,7 @@
       0xF00DFACE  : CA FE 0xBA  BE
     </textarea>
     <label for="fileInput">File to be patched</label>
-    <input type="file" id="fileInput" onchange="readFile(this)" />
+    <input type="file" id="fileInput" onchange="selectFile(this)" />
     <button id="applyBtn" onclick="patchAndSave()">Apply patch</button>
     <button onclick="toggleComparison()">Compare file</button>
     <div id="comparisonArea" class="hidden">
@@ -29,8 +29,9 @@
         <textarea id="changes" rows=6></textarea>
     </div>
     <script type="text/javascript">
-        var filename, bytes, originalBytes
-        function patchAndSave() {
+        var file
+        async function patchAndSave() {
+            const [bytes, filename] = await readFile(file) // bytes was read from fileInput
             var [error, patched] = applyPatch(bytes)
             if (error) alert(error)
             else saveBlob(new Blob([patched]), filename)
@@ -48,21 +49,25 @@
             }
             return [null, patched]
         }
-        async function readFile(fileInput) {
-            const file = fileInput.files[0]
+        async function readFile(file) {
             filename = file && file.name
             bytes = file && await new Promise(resolve => {
                 const reader = new FileReader()
                 reader.readAsArrayBuffer(file)
                 reader.onload = () => resolve(new Uint8Array(reader.result))
             })
-            if (fileInput.id === 'fileInput') {
-                originalBytes = bytes // originalBytes has content from fileInput
-                if (!bytes) document.getElementById('comparisonArea').classList.add('hidden')
+            return [bytes, filename]
+        }
+        async function selectFile(fileInput) {
+            file = fileInput.files[0]
+            if (!file) {
+                document.getElementById('comparisonArea').classList.add('hidden')
             }
         }
         async function compareFile(file2Input) {
-            await readFile(file2Input) // bytes has content from file2Input
+            const [originalBytes] = await readFile(file) // originalBytes was read from fileInput
+            const file2 = file2Input.files[0]
+            const [bytes] = await readFile(file2) // bytes was read from file2Input
             var diff = false
             var patches = ''
             for (var i in bytes) {
@@ -79,7 +84,7 @@
             document.getElementById('changes').value = patches.trim()
         }
         function toggleComparison() {
-            if (!bytes) {
+            if (!file) {
                 alert('no file selected')
                 return
             }
