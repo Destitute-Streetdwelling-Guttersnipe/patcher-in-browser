@@ -20,23 +20,27 @@
     <label for="fileInput">File to be patched</label>
     <input type="file" id="fileInput" onchange="readFile(this)" />
     <button id="applyBtn" onclick="patchAndSave()">Apply patch</button>
+    <label for="file2Input">File to be compared</label>
+    <input type="file" id="file2Input" onchange="compareFile(this)" />
     <script type="text/javascript">
         var filename, bytes
         function patchAndSave() {
-            var error = applyPatch(bytes)
+            var [error, patched] = applyPatch(bytes)
             if (error) alert(error)
-            else saveBlob(new Blob([bytes]), filename)
+            else saveBlob(new Blob([patched]), filename)
         }
         function applyPatch(bytes) {
             const patches = document.getElementById('patches').value.trim()
             location.hash = '#' + JSON.stringify({name: 'no_name', patches: patches.replaceAll(' ', '-').replaceAll('\n', '.')})
-            if (!bytes) return 'no file selected' 
+            if (!bytes) return ['no file selected']
+            var patched = new Uint8Array(bytes)
             for (var line of patches.split("\n")) {
-                if (!line.trim().match(/^(0x)?[0-9a-f]+\s*:?(\s+(0x)?[0-9a-f]{2})*$/i)) return 'wrong format: ' + line
+                if (!line.trim().match(/^(0x)?[0-9a-f]+\s*:?(\s+(0x)?[0-9a-f]{2})*$/i)) return ['wrong format: ' + line]
                 const [offset, ...patch] = line.trim().split(/\s*:?\s+/).map(i => parseInt(i, 16))
-                if (offset + patch.length > bytes.length) return 'offset too big: ' + line
-                bytes.set(patch, offset)
+                if (offset + patch.length > bytes.length) return ['offset too big: ' + line]
+                patched.set(patch, offset)
             }
+            return [null, patched]
         }
         async function readFile(fileInput) {
             const file = fileInput.files[0]
@@ -46,6 +50,24 @@
                 reader.readAsArrayBuffer(file)
                 reader.onload = () => resolve(new Uint8Array(reader.result))
             })
+        }
+        async function compareFile(file2Input) {
+            var oldBytes = bytes
+            await readFile(file2Input) // bytes has content from new file
+            var diff = false
+            var patches = ''
+            for (var i in bytes) {
+                if (bytes[i] === oldBytes[i]) {
+                    diff = false
+                } else {
+                    if (!diff) {
+                        diff = true
+                        patches += '\n' + parseInt(i).toString(16) + ':'
+                    }
+                    patches += ' ' + bytes[i].toString(16).padStart(2, '0')
+                }
+            }
+            document.getElementById('patches').value = patches.trim()
         }
         var saveBlob = (function () {
             var a = document.createElement("a");
