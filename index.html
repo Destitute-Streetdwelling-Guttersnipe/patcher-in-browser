@@ -29,7 +29,7 @@
         <textarea id="changes" rows=6></textarea>
     </div>
     <script type="text/javascript">
-        var filename, bytes
+        var filename, bytes, originalBytes
         function patchAndSave() {
             var [error, patched] = applyPatch(bytes)
             if (error) alert(error)
@@ -56,17 +56,17 @@
                 reader.readAsArrayBuffer(file)
                 reader.onload = () => resolve(new Uint8Array(reader.result))
             })
-            if (!bytes) {
-                document.getElementById('comparisonArea').classList.add('hidden')
+            if (fileInput.id === 'fileInput') {
+                originalBytes = bytes // originalBytes has content from fileInput
+                if (!bytes) document.getElementById('comparisonArea').classList.add('hidden')
             }
         }
         async function compareFile(file2Input) {
-            var oldBytes = bytes
-            await readFile(file2Input) // bytes has content from new file
+            await readFile(file2Input) // bytes has content from file2Input
             var diff = false
             var patches = ''
             for (var i in bytes) {
-                if (bytes[i] === oldBytes[i]) {
+                if (bytes[i] === originalBytes[i]) {
                     diff = false
                 } else {
                     if (!diff) {
