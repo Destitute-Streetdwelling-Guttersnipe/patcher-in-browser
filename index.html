@@ -4,9 +4,9 @@
     <title>Patcher in Browser</title>
     <meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
     <style>
-        input, textarea, button { display: block; width: 300px; margin-bottom: 20px; }
+        input, textarea, button, details { display: block; width: 300px; margin-bottom: 20px; padding: 5px 0; }
         body, body * { background: #444; color: #ccc; }
-        .hidden { display: none }
+        details, details * { background: #555; }
     </style>
 </head>
 <body>
@@ -19,15 +19,17 @@
       0xF00DFACE  : CA FE 0xBA  BE
     </textarea>
     <label for="fileInput">File to be patched</label>
-    <input type="file" id="fileInput" onchange="selectFile(this)" />
+    <input type="file" id="fileInput" onchange="compareFile()" />
     <button id="applyBtn" onclick="patchAndSave()">Apply patch</button>
-    <button id="compareBtn" onclick="toggleComparison()" class="hidden">Compare file</button>
-    <div id="comparisonArea" class="hidden">
-        <label for="file2Input">File to be compared</label>
-        <input type="file" id="file2Input" onchange="compareFile(this)" />
-        <label for="changes">Different offset and bytes (in hexadecimal)</label>
-        <textarea id="changes" rows=6></textarea>
-    </div>
+    <details>
+        <summary>Compare file</summary>
+        <p>
+            <label for="file2Input">File to be compared</label>
+            <input type="file" id="file2Input" onchange="compareFile()" />
+            <label for="changes">Different offset and bytes (in hexadecimal)</label>
+            <textarea id="changes" rows=6></textarea>
+        </p>
+    </details>
     <script type="text/javascript">
         async function patchAndSave() {
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
@@ -58,36 +60,25 @@
             })
             return [bytes, filename]
         }
-        async function selectFile(fileInput) {
-            const file = fileInput.files[0]
-            if (!file) {
-                document.getElementById('comparisonArea').classList.add('hidden')
-            }
-            document.getElementById('compareBtn').classList.toggle('hidden', !file)
-            compareFile()
-        }
-        async function compareFile(file2Input) {
+        async function compareFile() {
             document.getElementById('changes').value = ''
-            const [originalBytes] = await readFile('fileInput') // originalBytes was read from fileInput
-            const [bytes] = await readFile('file2Input') // bytes was read from file2Input
-            if (!bytes || !originalBytes) return
+            const [bytes] = await readFile('fileInput')
+            const [bytes2] = await readFile('file2Input')
+            if (!bytes2 || !bytes) return
             var diff = false
             var patches = ''
-            for (var i in bytes) {
-                if (bytes[i] === originalBytes[i]) {
+            for (var i in bytes2) {
+                if (bytes2[i] === bytes[i]) {
                     diff = false
                 } else {
                     if (!diff) {
                         diff = true
                         patches += '\n' + parseInt(i).toString(16) + ':'
                     }
-                    patches += ' ' + bytes[i].toString(16).padStart(2, '0')
+                    patches += ' ' + bytes2[i].toString(16).padStart(2, '0')
                 }
             }
             document.getElementById('changes').value = patches.trim()
-        }
-        function toggleComparison() {
-            document.getElementById('comparisonArea').classList.toggle('hidden')
         }
         var saveBlob = (function () {
             var a = document.createElement("a");
