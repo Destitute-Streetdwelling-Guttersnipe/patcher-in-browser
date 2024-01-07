@@ -68,15 +68,11 @@
             var diff = false
             var patches = ''
             for (var i in bytes2) {
-                if (bytes2[i] === bytes[i]) {
-                    diff = false
-                } else {
-                    if (!diff) {
-                        diff = true
-                        patches += '\n' + parseInt(i).toString(16) + ':'
-                    }
-                    patches += ' ' + bytes2[i].toString(16).padStart(2, '0')
+                if (!diff && (bytes2[i] !== bytes[i])) {
+                    patches += '\n' + parseInt(i).toString(16) + ':'
                 }
+                diff = bytes2[i] !== bytes[i]
+                if (diff) patches += ' ' + bytes2[i].toString(16).padStart(2, '0')
             }
             document.getElementById('changes').value = patches.trim()
         }
