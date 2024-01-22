@@ -5,8 +5,8 @@
     <meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
     <style>
         input, textarea, button, details { display: block; width: 300px; margin-bottom: 20px; padding: 5px 0; }
-        body, body * { background: #444; color: #ccc; }
-        details, details * { background: #555; }
+        body, body * { background: #333; color: #ccc; }
+        details, details * { background: #444; font-style: italic; }
     </style>
 </head>
 <body>
@@ -20,13 +20,13 @@
     </textarea>
     <label for="fileInput">File to be patched</label>
     <input type="file" id="fileInput" onchange="compareFile()" />
-    <button id="applyBtn" onclick="patchAndSave()">Apply patch</button>
+    <button id="applyBtn" onclick="patchAndSave()">Patch and save file</button>
     <details>
-        <summary>Compare file (Diff hex bytes)</summary>
+        <summary><b>Compare file (Diff hex bytes)</b></summary>
         <p>
             <label for="file2Input">File to be compared</label>
             <input type="file" id="file2Input" onchange="compareFile()" />
-            <label for="changes">Different offset and bytes (in hexadecimal)</label>
+            <label for="changes">Offset and bytes of differences</label>
             <textarea id="changes" rows=6></textarea>
         </p>
     </details>
@@ -39,7 +39,7 @@
         }
         function applyPatch(bytes) {
             const patches = document.getElementById('patches').value.trim()
-            location.hash = '#' + JSON.stringify({name: 'no_name', patches: patches.replaceAll(' ', '-').replaceAll('\n', '.')})
+            location.hash = '#' + JSON.stringify({name: 'patch_name', patches: patches.replaceAll(' ', '-').replaceAll('\n', '.')})
             if (!bytes) return ['no file selected']
             var patched = new Uint8Array(bytes)
             for (var line of patches.split("\n")) {
