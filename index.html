@@ -4,7 +4,7 @@
     <title>Patcher in Browser</title>
     <meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
     <style>
-        input, textarea, button, details { display: block; width: 300px; margin-bottom: 20px; padding: 5px 0; }
+        input, textarea, button, details { display: block; width: 320px; margin-bottom: 20px; padding: 5px 0; }
         body, body * { background: #333; color: #ccc; }
         details, details * { background: #444; font-style: italic; }
     </style>
@@ -13,10 +13,14 @@
     <h2><a href="https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser">Patcher in Browser</a></h2>
     <h3 id="name"></h3>
     <label for="patches">Offset and bytes (in hexadecimal)</label>
-    <textarea id="patches" rows=6>
-        BADC0DE:  41   42 53   54
-       DEADBEEF   0x31 32  63 0x64
-      0xF00DFACE  : CA FE 0xBA  BE
+    <textarea id="patches" rows=8>
+       DEADBEEF  FE E1  DE AF
+        ACE0FBA5E:  0xFE ED  C0 DE
+      0xFEDD06F00D :CA FE  0xBA BE
+      DECAFDAD : B0 BA  C0 FF EE
+        BAEBEE : FE EE  FI F0
+        FA CE  B0 0C  =0x0F F1 CE
+       0xB0 0B=  D0 0D  0F  DE ED
     </textarea>
     <label for="fileInput">File to be patched</label>
     <input type="file" id="fileInput" onchange="compareFile()" />
@@ -43,8 +47,15 @@
             if (!bytes) return ['no file selected']
             var patched = new Uint8Array(bytes)
             for (var line of patches.split(/\s*\n\s*/)) {
-                if (!line.match(/^(0x)?[0-9a-f]+\b\s*:?(\s*(0x)?[0-9a-f]{2}\b)*$/i)) return ['wrong format: ' + line]
-                const [offset, ...patch] = line.split(/\s*:?\s+/).map(i => parseInt(i, 16))
+                if (line.includes('=')) { // search for bytes and patch (aa bb = cc dd ee ff)
+                    if (!line.match(/^((0x)?[0-9a-f]{2}\b\s*)+=(\s*(0x)?[0-9a-f]{2}\b)+$/i)) return ['wrong format: ' + line]
+                    var [search, patch] = line.split(/\s*=\s*/).map(half => half.split(/\s+/).map(i => parseInt(i, 16)))
+                    var offset = patched.findIndex((v, i) => patched.subarray(i, i + search.length).join() == search.join())
+                    if (offset < 0) return ['bytes not found: ' + line]
+                } else { // patch at offset (aabbcc : dd ee ff)
+                    if (!line.match(/^(0x)?[0-9a-f]+\b\s*:?(\s*(0x)?[0-9a-f]{2}\b)+$/i)) return ['wrong format: ' + line]
+                    var [offset, ...patch] = line.split(/\s*[: ]\s*/).map(i => parseInt(i, 16))
+                }
                 if (offset + patch.length > bytes.length) return ['offset too big: ' + line]
                 patched.set(patch, offset)
             }
@@ -70,7 +81,7 @@
             for (var i in bytes2) {
                 if (!diff & (diff = bytes2[i] !== bytes[i])) {
                     patches += '\n' + parseInt(i).toString(16) + ':'
-                }
+                } // ouput example: aabbcc: dd ee ff
                 if (diff) patches += ' ' + bytes2[i].toString(16).padStart(2, '0')
             }
             document.getElementById('changes').value = patches.trim()
@@ -88,7 +99,7 @@
             };
         }());
         try {
-            // example: #{"name":"a_patcher_name","patches":"BADC0DE-41-42-53-54.F00DFACE-CA-FE-BA-BE"}
+            // example: #{"name":"patch_name","patches":"DEADBEEF-0F-F1-CE.CAFEBABE-FE-ED-FA-CE"}
             var paramStr = decodeURI(location.hash.slice(1))
             if (paramStr && paramStr[0]==='{') {
                 var params = JSON.parse(paramStr)

@@ -1,10 +1,17 @@
 # patcher-in-browser
 This is for the CLIphobia who wanna patch but don't wanna touch the command prompt.
 
-Use offset and bytes (as hexadecimal number) in the following formats:
+Example for patching at specified offset with hex bytes:
 
-        BADC0DE:  41   42 53   54
-       DEADBEEF   0x31 32  63 0x64
-      0xF00DFACE  : CA FE 0xBA  BE
+       DEADBEEF  FE E1  DE AF
+        ACE0FBA5E:  0xFE ED  C0 DE
+      0xFEDD06F00D :CA FE  0xBA BE
+      DECAFDAD : B0 BA  C0 FF EE
+        BAEBEE : FE EE  FI F0
 
-Support pre-defined patches in URL hash, such as `#{"name":"a_patcher_name","patches":"BADC0DE-41-42-53-54.F00DFACE-CA-FE-BA-BE"}`
+Example for searching and replacing with hex bytes:
+
+        FA CE  B0 0C  =0x0F F1 CE
+       0xB0 0B=  D0 0D  0F  DE ED
+
+Support pre-defined patches in URL hash, such as `#{"name":"FAE-FEE-F00","patches":"BADBED-DE-FE-CA-7E.FADEDFAD-BE-DE-FE-A7-ED"}`
