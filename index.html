@@ -18,7 +18,7 @@
         ACE0FBA5E:  0xFE ED  C0 DE
       0xFEDD06F00D :CA FE  0xBA BE
       DECAFDAD : B0 BA  C0 FF EE
-        BAEBEE : FE EE  FI F0
+        BAEBEE : FE EE  F1 F0
         FA CE  B0 0C  =0x0F F1 CE
        0xB0 0B=  D0 0D  0F  DE ED
     </textarea>
@@ -50,7 +50,7 @@
                 if (line.includes('=')) { // search for bytes and patch (aa bb = cc dd ee ff)
                     if (!line.match(/^((0x)?[0-9a-f]{2}\b\s*)+=(\s*(0x)?[0-9a-f]{2}\b)+$/i)) return ['wrong format: ' + line]
                     var [search, patch] = line.split(/\s*=\s*/).map(half => half.split(/\s+/).map(i => parseInt(i, 16)))
-                    var offset = patched.findIndex((v, i) => patched.subarray(i, i + search.length).join() == search.join())
+                    var offset = findIndexOfSubArray(search, patched)
                     if (offset < 0) return ['bytes not found: ' + line]
                 } else { // patch at offset (aabbcc : dd ee ff)
                     if (!line.match(/^(0x)?[0-9a-f]+\b\s*:?(\s*(0x)?[0-9a-f]{2}\b)+$/i)) return ['wrong format: ' + line]
@@ -60,6 +60,10 @@
                 patched.set(patch, offset)
             }
             return [null, patched]
+        }
+        function findIndexOfSubArray(sub, array) {
+            const values = sub.join()
+            return array.findIndex((v, i) => v === sub[0] && values === array.subarray(i, i + sub.length).join())
         }
         async function readFile(id) {
             const file = document.getElementById(id).files[0]

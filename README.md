@@ -7,7 +7,7 @@ Example for patching at specified offset with hex bytes:
         ACE0FBA5E:  0xFE ED  C0 DE
       0xFEDD06F00D :CA FE  0xBA BE
       DECAFDAD : B0 BA  C0 FF EE
-        BAEBEE : FE EE  FI F0
+        BAEBEE : FE EE  F1 F0
 
 Example for searching and replacing with hex bytes:
 
