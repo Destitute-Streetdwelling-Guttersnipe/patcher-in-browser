@@ -32,14 +32,14 @@
     </details>
     <script type="text/javascript">
         async function patchAndSave() {
+            const patches = document.getElementById('patches').value.trim()
+            location.hash = '#' + JSON.stringify({name: 'patch_name', patches: patches.replaceAll(' ', '-').replaceAll('\n', '.')})
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
-            var [error, patched] = applyPatch(bytes)
+            var [error, patched] = applyPatch(bytes, patches)
             if (error) alert(error)
             else saveBlob(new Blob([patched]), filename)
         }
-        function applyPatch(bytes) {
-            const patches = document.getElementById('patches').value.trim()
-            location.hash = '#' + JSON.stringify({name: 'patch_name', patches: patches.replaceAll(' ', '-').replaceAll('\n', '.')})
+        function applyPatch(bytes, patches) {
             if (!bytes) return ['no file selected']
             var patched = new Uint8Array(bytes)
             for (var line of patches.split(/\s*\n\s*/)) {
