@@ -62,8 +62,14 @@
             return [null, patched]
         }
         function findIndexOfSubArray(sub, array) {
-            const values = sub.join()
-            return array.findIndex((v, i) => v === sub[0] && values === array.subarray(i, i + sub.length).join())
+            let i = 0, j = 0
+            do {
+                if (array[j++] !== sub[i++]) {
+                    i = 0
+                    j = array.indexOf(sub[0], j)
+                } else if (i === sub.length) return j - i
+            } while (j >= 0 && j < array.length)
+            return -1
         }
         async function readFile(id) {
             const file = document.getElementById(id).files[0]
