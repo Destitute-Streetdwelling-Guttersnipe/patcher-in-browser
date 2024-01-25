@@ -35,8 +35,10 @@
         </p>
     </details>
     <script type="text/javascript">
+        var $e = (id) => document.getElementById(id)
+
         async function patchAndSave() {
-            const patches = document.getElementById('patches').value.trim()
+            const patches = $e('patches').value.trim()
             location.hash = '#' + JSON.stringify({name: 'patch_name', patches: patches.replaceAll(' ', '-').replaceAll('\n', '.')})
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
             var [error, patched] = applyPatch(bytes, patches)
@@ -72,7 +74,7 @@
             return -1
         }
         async function readFile(id) {
-            const file = document.getElementById(id).files[0]
+            const file = $e(id).files[0]
             const filename = file && file.name
             const bytes = file && await new Promise(resolve => {
                 const reader = new FileReader()
@@ -82,7 +84,7 @@
             return [bytes, filename]
         }
         async function compareFile() {
-            document.getElementById('changes').value = ''
+            $e('changes').value = ''
             const [bytes] = await readFile('fileInput')
             const [bytes2] = await readFile('file2Input')
             if (!bytes2 || !bytes) return
@@ -94,7 +96,7 @@
                 } // ouput example: aabbcc: dd ee ff
                 if (diff) patches += ' ' + bytes2[i].toString(16).padStart(2, '0')
             }
-            document.getElementById('changes').value = patches.trim()
+            $e('changes').value = patches.trim()
         }
         var saveBlob = (function () {
             var a = document.createElement("a");
@@ -113,8 +115,8 @@
             var paramStr = decodeURI(location.hash.slice(1))
             if (paramStr && paramStr[0]==='{') {
                 var params = JSON.parse(paramStr)
-                document.getElementById('name').innerText = params.name
-                document.getElementById('patches').value = params.patches.replaceAll('-',' ').replaceAll('.','\n')
+                $e('name').innerText = params.name
+                $e('patches').value = params.patches.replaceAll('-',' ').replaceAll('.','\n')
             }
         } catch(ex) {
             console.warn('Error: cannot parse parameters from URL hash', ex)
