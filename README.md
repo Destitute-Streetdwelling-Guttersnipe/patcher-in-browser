@@ -3,6 +3,10 @@ This is for the CLIphobia who wanna patch but don't wanna touch the command prom
 
 ## Patches format
 
+Each line contains what to patch (hex bytes) and how to patch (offset or bytes to be searched).
+
+Comment lines (starting with '#') are ignored.
+
 Example of patching at specified offset with hex bytes:
 
        DEADBEEF  FE E1  DE AF
@@ -15,8 +19,6 @@ Example of searching and replacing with hex bytes:
 
       # FA CE  B0 0C  =0x0F F1 CE
        0xB0 0B=  D0 0D  0F  DE ED
-
-Comment lines (starting with '#') are ignored.
 
 ## Patches in URL
 
