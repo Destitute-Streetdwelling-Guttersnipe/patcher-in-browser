@@ -39,7 +39,7 @@
 
         async function patchAndSave() {
             const patches = $e('patches').value.trim()
-            location.hash = '#' + JSON.stringify({name: 'patch_name', patches: patches.replaceAll(' ', '-').replaceAll('\n', '.')})
+            location.hash = '#' + JSON.stringify({name: 'patch_name', patches: patches.replaceAll(' ', '~').split('\n')})                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
             var [error, patched] = applyPatch(bytes, patches)
             if (error) alert(error)
@@ -111,12 +111,12 @@
             };
         }());
         try {
-            // example: #{"name":"patch_name","patches":"DEADBEEF-0F-F1-CE.CAFEBABE-FE-ED-FA-CE"}
+            // example: #{"name":"patch_name","patches":[all"DEADBEEF~0F~F1~CE","CAFEBABE~FE~ED~FA~CE"]}
             var paramStr = decodeURI(location.hash.slice(1))
             if (paramStr && paramStr[0]==='{') {
                 var params = JSON.parse(paramStr)
                 $e('name').innerText = params.name
-                $e('patches').value = params.patches.replaceAll('-',' ').replaceAll('.','\n')
+                $e('patches').value = params.patches.join('\n').replaceAll('~', ' ')
             }
         } catch(ex) {
             console.warn('Error: cannot parse parameters from URL hash', ex)
