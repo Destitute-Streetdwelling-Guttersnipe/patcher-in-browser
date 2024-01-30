@@ -13,7 +13,7 @@
     <h2><a href="https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser">Patcher in Browser</a></h2>
     <h3 id="name" contenteditable>Patchy McPatchface</h3>
     <label for="patches">Offset and bytes (in hexadecimal)</label>
-    <textarea id="patches" rows=8>
+    <textarea id="patches" rows=8 wrap="off">
        DEADBEEF  FE E1  DE AF
         ACE0FBA5E:  0xFE ED  C0 DE
       0xFEDD06F00D :CA FE  0xBA BE
@@ -31,7 +31,7 @@
             <label for="file2Input">File to be compared</label>
             <input type="file" id="file2Input" onchange="compareFile()" />
             <label for="changes">Offset and bytes of differences</label>
-            <textarea id="changes" rows=6></textarea>
+            <textarea id="changes" rows=6 wrap="off"></textarea>
         </p>
     </details>
     <script type="text/javascript">
