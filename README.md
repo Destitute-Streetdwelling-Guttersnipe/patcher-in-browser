@@ -24,7 +24,7 @@ Example of searching and replacing with hex bytes:
 
 Patches are read from URL hash at start-up, such as `#{"name":"FAE-FEE-F00","patches":["BADBED~DE~FE~CA~7E","FADEDFAD~BE~DE~FE~A7~ED"]}`
 
-Patches are written to URL hash upon applying to a file.
+Patches are written to URL hash when the patches input lose focus.
 
 Patches in URL can be shared easier than uploading a patch file somewhere.
 
