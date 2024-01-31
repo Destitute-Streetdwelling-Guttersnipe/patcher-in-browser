@@ -5,7 +5,7 @@ This is for the CLIphobia who wanna patch but don't wanna touch the command prom
 
 Each line contains what to patch (hex bytes) and how to patch (offset or bytes to be searched).
 
-Comment lines (starting with '#') are ignored. Comment should not use '~' (tilde) since it's used for serialization of patches in URL. You can replace '~' with $HOME (in path), or %7E (in URL). 
+Comment lines (starting with '#') are ignored. Comment should not use `~` (tilde) since it's used for serialization of patches in URL. You can replace `~` with $HOME (in path), or %7E (in URL). 
 
 Example of patching at specified offset with hex bytes:
 
