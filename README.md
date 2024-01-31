@@ -1,6 +1,8 @@
 # patcher-in-browser
 This is for the CLIphobia who wanna patch but don't wanna touch the command prompt.
 
+![image](https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser/assets/90743025/1c228cef-90b1-4315-bff5-6fa026cfb7df)
+
 ## Patches format
 
 Each line contains what to patch (hex bytes) and how to patch (offset or bytes to be searched).
