@@ -24,7 +24,7 @@ Example of searching and replacing with hex bytes:
 
 ## Patches in URL
 
-Patches are read from URL hash at start-up, such as `#{"name":"FAE-FEE-F00","patches":["BADBED~DE~FE~CA~7E","FADEDFAD~BE~DE~FE~A7~ED"]}`
+Patches are read from URL hash at start-up, such as `#{"name":"Patchy-McPatchface","patches":["BADBED~DE~FE~CA~7E","BE~=~DE~FE~A7~ED","#~FADEDFAD~FAE-FEE-F00"]}`
 
 Patches are written to URL hash when the patches input lose focus.
 
@@ -38,5 +38,5 @@ Expand the section "Compare file (Diff hex bytes)" to generate patches for the d
 
 Other tools that also support patches in URL:
 
-* My fork of RomPatcher.js (patch file in URL) https://destitute-streetdwelling-guttersnipe.github.io/RomPatcher.js/#{"PATCHER":[{"name":"Boaty-McBoatface","file":"data:;base64,VVBTMQAgboMAIG6D+pUXwPqVF8AybecD"}]}
+* My fork of RomPatcher.js (patch files in URL) https://destitute-streetdwelling-guttersnipe.github.io/RomPatcher.js/#{"PATCHER":[{"name":"Boaty-McBoatface","file":"data:;base64,VVBTMQAgboMAIG6D+pUXwPqVF8AybecD"}]}
 * CyberChef (search & replace hex string) https://gchq.github.io/CyberChef/#recipe=To_Hex('Colon',0)Find_/_Replace({'option':'Regex','string':'97:94:0D:00'},'79:94:0D:00',true,false,true,false)From_Hex('Auto')
