@@ -13,7 +13,7 @@
     <h2><a href="https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser">Patcher in Browser</a></h2>
     <h3 id="name" contenteditable>Patchy McPatchface</h3>
     <label for="patches">Offset and bytes (in hexadecimal)</label>
-    <textarea id="patches" rows=8 wrap="off">
+    <textarea id="patches" rows=8 wrap="off" onchange="putPatchesIntoUrl()">
        DEADBEEF  FE E1  DE AF
         ACE0FBA5E:  0xFE ED  C0 DE
       0xFEDD06F00D :CA FE  0xBA BE
@@ -37,10 +37,13 @@
     <script type="text/javascript">
         var $e = (id) => document.getElementById(id)
 
-        async function patchAndSave() {
+        function putPatchesIntoUrl() {
             const name = $e('name').innerText.trim()
             const patches = $e('patches').value.trim()
             location.hash = '#' + JSON.stringify({name: name, patches: patches.replaceAll(' ', '~').split('\n')})
+        }
+        async function patchAndSave() {
+            const patches = $e('patches').value.trim()
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
             var [error, patched] = applyPatch(bytes, patches)
             if (error) alert(error)
