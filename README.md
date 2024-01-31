@@ -33,3 +33,10 @@ Patches in URL can be shared easier than uploading a patch file somewhere.
 ## Compare file to generate patches
 
 Expand the section "Compare file (Diff hex bytes)" to generate patches for the differences between 2 files.
+
+## Similar tools
+
+Other tools that also support patches in URL:
+
+* My fork of RomPatcher.js (patch file in URL) https://destitute-streetdwelling-guttersnipe.github.io/RomPatcher.js/#{"PATCHER":[{"name":"Boaty-McBoatface","file":"data:;base64,VVBTMQAgboMAIG6D+pUXwPqVF8AybecD"}]}
+* CyberChef (search & replace hex string) https://gchq.github.io/CyberChef/#recipe=To_Hex('Colon',0)Find_/_Replace({'option':'Regex','string':'97:94:0D:00'},'79:94:0D:00',true,false,true,false)From_Hex('Auto')
