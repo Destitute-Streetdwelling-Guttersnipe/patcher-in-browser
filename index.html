@@ -9,6 +9,7 @@
         body, body * { background: #333; color: #ccc; }
         details, details * { background: #444; font-style: italic; }
         [id]:hover, summary:hover { background: #345; color: #ddd; }
+        [type="file"] { background-image: linear-gradient(to right, #678 calc(var(--done)), transparent calc(var(--done))) }
     </style>
 </head>
 <body>
@@ -85,7 +86,8 @@
             const bytes = file && await new Promise(resolve => {
                 const reader = new FileReader()
                 reader.readAsArrayBuffer(file)
-                reader.onload = () => resolve(new Uint8Array(reader.result))
+                reader.onload = () => { $e(id).setAttribute('style', ''); resolve(new Uint8Array(reader.result)) }
+                reader.onprogress = (e) => $e(id).setAttribute('style', '--done:' + (e.loaded / e.total * 100) + '%')
             })
             return [bytes, filename]
         }
