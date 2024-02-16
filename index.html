@@ -86,8 +86,8 @@
             const bytes = file && await new Promise(resolve => {
                 const reader = new FileReader()
                 reader.readAsArrayBuffer(file)
-                reader.onload = () => { $e(id).setAttribute('style', ''); resolve(new Uint8Array(reader.result)) }
-                reader.onprogress = (e) => $e(id).setAttribute('style', '--done:' + (e.loaded / e.total * 100) + '%')
+                reader.onload = () => resolve(new Uint8Array(reader.result))
+                reader.onprogress = (e) => $e(id).setAttribute('style', '--done:' + (e.loaded / e.total * 100)%100 + '%') // hide progress when done
             })
             return [bytes, filename]
         }
