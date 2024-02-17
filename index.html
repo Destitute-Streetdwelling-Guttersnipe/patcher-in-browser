@@ -8,8 +8,8 @@
         input, textarea, button, details { display: block; width: 1024px; max-width: 100%; margin-bottom: 20px; padding: 5px 0; }
         body, body * { background: #333; color: #ccc; }
         details[id]:hover, details, details * { background: #444; font-style: italic; }
-        [id]:hover, summary:hover { background: #345; color: #ddd; }
-        [type="file"] { background-image: linear-gradient(to right, #678 calc(var(--done)), transparent calc(var(--done))) }
+        [id]:hover { background: #345; color: #ddd; }
+        [id^="file"] { background-image: linear-gradient(to right, #678 calc(var(--done)), transparent calc(var(--done))) }
     </style>
 </head>
 <body>
@@ -29,7 +29,7 @@
     <input type="file" id="fileInput" onchange="compareFile()" />
     <button id="applyBtn" onclick="patchAndSave()">Patch and save file</button>
     <details id="diffArea">
-        <summary><b>Compare file (Diff hex bytes)</b></summary>
+        <summary id="fileDiff">Compare file (Diff hex bytes)</summary>
         <p>
             <label for="file2Input">File to be compared (with original file)</label>
             <input type="file" id="file2Input" onchange="compareFile()" />
@@ -107,6 +107,7 @@
             }
             if (i < bytes2.length) setTimeout(() => compareArray(bytes, bytes2, diff, patches, i))
             else $e('changes').value = patches.trim()
+            $e('fileDiff').setAttribute('style', '--done:' + (i / bytes2.length * 100)%100 + '%')
         }
         var saveBlob = (function () {
             var a = document.createElement("a");
