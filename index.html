@@ -98,15 +98,15 @@
             const [bytes2] = await readFile('file2Input')
             if (bytes2 && bytes) compareArray(bytes, bytes2)
         }
-        function compareArray(bytes, bytes2, diff = false, patches = '', start = 0) {
-            for (var i = start; i < start + 10**5 && i < bytes2.length; i++) {
+        function compareArray(bytes, bytes2, diff = false, patches = [], start = 0, step = 10**6) {
+            for (var i = start; i < start + step && i < bytes2.length; i++) {
                 if (!diff & (diff = bytes2[i] !== bytes[i])) {
-                    patches += '\n' + parseInt(i).toString(16) + ':'
+                    patches.push('\n' + parseInt(i).toString(16) + ':')
                 } // ouput example: aabbcc: dd ee ff
-                if (diff) patches += ' ' + bytes2[i].toString(16).padStart(2, '0')
+                if (diff) patches.push(' ' + bytes2[i].toString(16).padStart(2, '0'))
             }
             if (i < bytes2.length) setTimeout(() => compareArray(bytes, bytes2, diff, patches, i))
-            else $e('changes').value = patches.trim()
+            else $e('changes').value = patches.join().trim()
             $e('changes').setAttribute('style', '--done:' + (i / bytes2.length * 100)%100 + '%')
         }
         var saveBlob = (function () {
