@@ -106,7 +106,7 @@
                 if (diff) patches.push(' ' + bytes2[i].toString(16).padStart(2, '0'))
             }
             if (i < bytes2.length) setTimeout(() => compareArray(bytes, bytes2, diff, patches, i))
-            else $e('changes').value = patches.join().trim()
+            else $e('changes').value = patches.join('').trim()
             $e('changes').setAttribute('style', '--done:' + (i / bytes2.length * 100)%100 + '%')
         }
         var saveBlob = (function () {
