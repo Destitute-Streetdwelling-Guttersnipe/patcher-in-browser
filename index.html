@@ -9,7 +9,7 @@
         body, body * { background: #333; color: #ccc; }
         details[id]:hover, details, details * { background: #444; font-style: italic; }
         [id]:hover, summary:hover { background: #345; color: #ddd; }
-        [type="file"], [id="changes"] { background-image: linear-gradient(to right, #678 calc(var(--done)), transparent calc(var(--done))) }
+        input[type="file"], textarea { background-image: linear-gradient(to right, #678 calc(var(--done)), transparent calc(var(--done))) }
     </style>
 </head>
 <body>
@@ -46,16 +46,19 @@
             location.hash = '#' + JSON.stringify({name: name, patches: patches.replaceAll(' ', '~').split('\n')})
         }
         async function patchAndSave() {
-            const patches = $e('patches').value.trim()
+            const lines = $e('patches').value
+            $e('patches').value = '' // clear textarea to prevent stutter when it contains too many text
+            const patches = lines.trim().split(/\s*\n\s*/).filter(line => !line.startsWith('#')) // exclude comment lines
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
-            var [error, patched] = applyPatch(bytes, patches)
+            var [error, patched] = await applyPatch(bytes, patches)
             if (error) alert(error)
             else saveBlob(new Blob([patched]), filename)
+            $e('patches').value = lines
         }
-        function applyPatch(bytes, patches) {
-            if (!bytes) return ['no file selected']
-            var patched = new Uint8Array(bytes)
-            for (var line of patches.split(/\s*\n\s*/).filter(line => !line.startsWith('#'))) { // exclude comment lines
+        function applyPatch(patched, patches, start = 0, step = 10**5) {
+            if (!patched) return ['no file selected']
+            for (var i = start; i < start + step && i < patches.length; i++) {
+                var line = patches[i]
                 if (line.includes('=')) { // search for bytes and patch (aa bb = cc dd ee ff)
                     if (!line.match(/^((0x)?[0-9a-f]{2}\b\s*)+=(\s*(0x)?[0-9a-f]{2}\b)+$/i)) return ['wrong format: ' + line]
                     var [search, patch] = line.split(/\s*=\s*/).map(half => half.split(/\s+/).map(i => parseInt(i, 16)))
@@ -65,10 +68,12 @@
                     if (!line.match(/^(0x)?[0-9a-f]+\b\s*:?(\s*(0x)?[0-9a-f]{2}\b)+$/i)) return ['wrong format: ' + line]
                     var [offset, ...patch] = line.split(/\s*[: ]\s*/).map(i => parseInt(i, 16))
                 }
-                if (offset + patch.length > bytes.length) return ['offset too big: ' + line]
+                if (offset + patch.length > patched.length) return ['offset too big: ' + line]
                 patched.set(patch, offset)
             }
-            return [null, patched]
+            $e('patches').setAttribute('style', '--done:' + (i / patches.length * 100)%100 + '%')
+            if (i >= patches.length) return [null, patched];
+            return new Promise((resolve) => setTimeout(() => resolve(applyPatch(patched, patches, i))))
         }
         function findIndexOfSubArray(sub, array) {
             let i = 0, j = 0
