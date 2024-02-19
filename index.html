@@ -46,14 +46,12 @@
             location.hash = '#' + JSON.stringify({name: name, patches: patches.replaceAll(' ', '~').split('\n')})
         }
         async function patchAndSave() {
-            const lines = $e('patches').value
-            $e('patches').value = '' // clear textarea to prevent stutter when it contains too many text
-            const patches = lines.trim().split(/\s*\n\s*/).filter(line => !line.startsWith('#')) // exclude comment lines
+            $e('name').focus() // focus on something to prevent stutter when textarea contains too many text
+            const patches = $e('patches').value.trim().split(/\s*\n\s*/).filter(line => !line.startsWith('#')) // exclude comment lines
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
             var [error, patched] = await applyPatch(bytes, patches)
             if (error) alert(error)
             else saveBlob(new Blob([patched]), filename)
-            $e('patches').value = lines
         }
         function applyPatch(patched, patches, start = 0, step = 10**5) {
             if (!patched) return ['no file selected']
