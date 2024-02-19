@@ -39,6 +39,7 @@
     </details>
     <script type="text/javascript">
         var $e = (id) => document.getElementById(id)
+        var showProgress = (id, rate) => $e(id).setAttribute('style', '--done:' + (rate * 100)%100 + '%')
 
         function putPatchesIntoUrl() {
             const name = $e('name').innerText.trim()
@@ -69,7 +70,7 @@
                 if (offset + patch.length > patched.length) return ['offset too big: ' + line]
                 patched.set(patch, offset)
             }
-            $e('patches').setAttribute('style', '--done:' + (i / patches.length * 100)%100 + '%')
+            showProgress('patches', i / patches.length)
             if (i >= patches.length) return [null, patched];
             return new Promise((resolve) => setTimeout(() => resolve(applyPatch(patched, patches, i))))
         }
@@ -90,7 +91,7 @@
                 const reader = new FileReader()
                 reader.readAsArrayBuffer(file)
                 reader.onload = () => resolve(new Uint8Array(reader.result))
-                reader.onprogress = (e) => $e(id).setAttribute('style', '--done:' + (e.loaded / e.total * 100)%100 + '%') // hide progress when done
+                reader.onprogress = (e) => showProgress(id, e.loaded / e.total) // hide progress when done
             })
             return [bytes, filename]
         }
@@ -110,7 +111,7 @@
             }
             if (i < bytes2.length) setTimeout(() => compareArray(bytes, bytes2, diff, patches, i))
             else $e('changes').value = patches.join('').trim()
-            $e('changes').setAttribute('style', '--done:' + (i / bytes2.length * 100)%100 + '%')
+            showProgress('changes', i / bytes2.length)
         }
         var saveBlob = (function () {
             var a = document.createElement("a");
