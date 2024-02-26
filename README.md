@@ -34,6 +34,11 @@ Patches in URL can be shared easier than uploading a patch file somewhere.
 
 Expand the section "Compare file (Diff hex bytes)" to generate patches for the differences between 2 files.
 
+## Limitations
+
+* This tool does not support extending or truncating files
+* Huge files may not be patchable (since files are loaded and patched in RAM)
+
 ## Similar tools
 
 Other tools that also support patches in URL:
