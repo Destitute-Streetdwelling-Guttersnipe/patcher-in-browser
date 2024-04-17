@@ -38,6 +38,7 @@ Expand the section "Compare file (Diff hex bytes)" to generate patches for the d
 
 * This tool does not support extending or truncating files
 * Huge files may not be patchable (since files are loaded and patched in RAM)
+* Responsiveness is reduced when there's too many text in text input (only happen with Chrome, not FireFox)
 
 ## Similar tools
 
