@@ -5,10 +5,11 @@
     <meta http-equiv="content-Type" content="text/html; charset=UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-        input, textarea, button, details { display: block; width: 1024px; max-width: 100%; margin-bottom: 20px; padding: 5px 0; }
+        label[for="holeIncluded"], input, textarea, button, details { display: inline-block; width: 1024px; max-width: 100%; margin-bottom: 20px; padding: 5px 0; }
+        input[type="checkbox"] { width: 20px; margin: 0 }
         body, body * { background: #333; color: #ccc; }
         details[id]:hover, details, details * { background: #444; font-style: italic; }
-        [id]:hover, summary:hover { background: #345; color: #ddd; }
+        label[for="holeIncluded"]:hover, [id]:hover, summary:hover { background: #345; color: #ddd; }
         input[type="file"], textarea { background-image: linear-gradient(to right, #678 calc(var(--done)), transparent calc(var(--done))) }
     </style>
 </head>
@@ -33,6 +34,10 @@
         <p>
             <label for="file2Input">File to be compared (with original file)</label>
             <input type="file" id="file2Input" onchange="compareFile()" />
+            <label for="holeIncluded">
+                <input type="checkbox" id="holeIncluded" onchange="compareFile()" />
+                Include "hole" (1 unchanged byte between 2 changed bytes)
+            </label>
             <label for="changes">Offset and bytes of differences</label>
             <textarea id="changes" rows=6 wrap="off"></textarea>
         </p>
@@ -100,18 +105,21 @@
             $e('changes').value = ''
             const [bytes] = await readFile('fileInput')
             const [bytes2] = await readFile('file2Input')
-            if (bytes2 && bytes) compareArray(bytes, bytes2)
+            if (bytes2 && bytes) compareArray(bytes, bytes2, $e('holeIncluded').checked)
         }
-        function compareArray(bytes, bytes2, diff = false, patches = [], start = 0, step = 10**6) {
+        function compareArray(bytes, bytes2, holeIncluded, diff = false, patches = [], start = 0, step = 10**6) {
             for (var i = start; i < start + step && i < bytes2.length; i++) {
-                if (!diff & (diff = bytes2[i] !== bytes[i])) {
+                if (!diff & (diff = diffAtIndex(bytes, bytes2, i, holeIncluded))) {
                     patches.push('\n' + parseInt(i).toString(16) + ':')
                 } // ouput example: aabbcc: dd ee ff
                 if (diff) patches.push(' ' + bytes2[i].toString(16).padStart(2, '0'))
             }
-            if (i < bytes2.length) setTimeout(() => compareArray(bytes, bytes2, diff, patches, i))
+            if (i < bytes2.length) setTimeout(() => compareArray(bytes, bytes2, holeIncluded, diff, patches, i))
             else $e('changes').value = patches.join('').trim()
             showProgress('changes', i / bytes2.length)
+        }
+        function diffAtIndex(bytes, bytes2, i, holeIncluded) {
+            return bytes2[i] !== bytes[i] || (holeIncluded && bytes2[i+1] !== bytes[i+1] && bytes2[i-1] !== bytes[i-1])
         }
         var saveBlob = (function () {
             var a = document.createElement("a");
