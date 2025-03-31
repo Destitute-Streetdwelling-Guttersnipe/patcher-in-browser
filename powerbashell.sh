@@ -37,15 +37,15 @@ cat <<END-OF-HTML
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg" type="image/x-icon">
     <style>
-        input, textarea, h3 { display: inline-block; width: 100%; margin: 0 0 20px; padding: 3px; border-width: 3px }
-        body, body * { background: #333; color: #ccc; max-width: 1024px; box-sizing: border-box; zoom: 1.5 }
-        form > *:hover, h3:hover { background: #345; color: #ddd; }
+        a, input, textarea, h3 { display: inline-block; width: 100%; margin: 0 0 20px; padding: 3px; border-width: 3px }
+        body, body * { background: #333; color: #4a4; max-width: 1024px; box-sizing: border-box; zoom: 1.5; text-align: center }
+        form > *:hover, h3:hover { background: #345; color: #ddd; outline: 2px dotted yellow }
     </style>
 </head>
 <body>
-  <h2>PowerBashell Patcher</h2>
-  <h3 id="name" contenteditable>Patchy McPatchface</h3>
+  <a href="https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser" title="{ the go-to source }">⟫⟫ PowerBashell Patcher ⟪⟪</a>
   <form id="form" method="POST">
+    <h3 id="name" contenteditable title="〚⟦ edit me ⟧〛">Patchy McPatchface</h3>
     <label for="patches">Offset and bytes (in hexadecimal)</label>
     <textarea id="patches" name="patches" rows=8 wrap="off" onchange="putPatchesIntoUrl()">
        DEADBEEF  FE E1  DE AF
@@ -58,7 +58,7 @@ cat <<END-OF-HTML
     </textarea>
     <label for="file">Original file</label>
     <input type="text" id="file" name="file" onchange="putPatchesIntoUrl()"/>
-    <input type="submit" value="Patch file"/>
+    <input type="submit" value="【  Patch file  】" title="»»››>>＞＞ click me ＜＜<<‹‹««"/>
   </form>
   <label for="result">Result</label>
   <textarea id="result" rows=8 wrap="off" readonly>$1</textarea>
