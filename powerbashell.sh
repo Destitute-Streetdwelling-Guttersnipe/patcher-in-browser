@@ -96,3 +96,51 @@ END-OF-HTML
 main $*
 exit ### NOTE: the end of bash script
 #> > $null
+Add-Type -AssemblyName System.Web
+function get_param() { param($name, $query)
+  if ($query -match "$name=([^&]+)") {
+    return [System.Web.HttpUtility]::UrlDecode($Matches[1])
+  }
+}
+function response_ok() { param($html, $response)
+  $buffer = [System.Text.Encoding]::UTF8.GetBytes($html)
+  $response.ContentLength64 = $buffer.Length
+  $response.OutputStream.Write($buffer, 0, $buffer.Length)
+  $response.OutputStream.Close()
+}
+$listener = [System.Net.HttpListener]::New()
+$listener.Prefixes.Add("http://localhost:8088/")
+$listener.Start()
+if ($listener.IsListening) {
+  write-host " Listening at $($listener.Prefixes) " -f 'black' -b 'gre'
+}
+while ($listener.IsListening) {
+  $context = $listener.GetContext()
+  $request = $context.Request
+  write-host "------- Request : $($request.HttpMethod) $($request.RawUrl)" -f 'gre'
+  if ($request.RawUrl -eq '/end') {
+    $listener.Stop()
+  }
+  $result = ''
+  if ($request.HttpMethod -eq 'POST') {
+    $reader = [System.IO.StreamReader]::New($request.InputStream, $request.ContentEncoding)
+    $rawParams = $reader.ReadToEnd()
+    $file = get_param 'file' $rawParams
+    $patches = get_param 'patches' $rawParams
+    $patches = $patches -replace ' *(?m)^ *#.*\r\n','' -replace ' +',' ' -replace ' ?(:|=) ?','$1' -replace '0x([0-9a-f])','$1' # remove spaces, comment lines, and prefix 0x
+    write-host "File : $file"
+    write-host "Patches : $patches"
+
+    $bytes = [System.IO.File]::ReadAllBytes($file)
+    $patches -split " ?`r`n ?" -match '\S' | %{
+      $offset, $data = $_.replace(':', ' ').split(' ') | %{ [int32]"0x$_" } # [convert]::ToInt32($_, 16)
+      ([byte[]]$data).CopyTo($bytes, $offset)
+    }
+    [System.IO.File]::WriteAllBytes($file, $bytes)
+  }
+  if ($request.RawUrl -eq '/') {
+    [string]$html = "<h1>A PowerShell Web Server</h1><p>home page</p>"
+    response_ok $html $context.Response
+  }
+}
+# try {} finally { $listener.Stop() }
