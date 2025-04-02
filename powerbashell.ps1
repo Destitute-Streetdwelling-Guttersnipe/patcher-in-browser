@@ -17,7 +17,7 @@ on_http_request() {
   if [[ $method == 'POST' ]]; then
     while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
     file=$(get_param file "$query")
-    patches=$(get_param patches "$query" | sed -E '/^ *#/d; s/ +/ /g; s/ ?(:|=) ?/\1/g; s/0x([0-9a-f])/\1/gi') # remove spaces, comment lines, and prefix 0x
+    patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ +/ /g; s/ ?(:|=) ?/\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
     result=$(<<<"$patches" xxd -r -c256 - "$file" 2>&1)
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-ok}
@@ -131,7 +131,7 @@ while ($listener.IsListening) {
       $rawParams = $reader.ReadToEnd()
       $file = get_param 'file' $rawParams
       $patches = get_param 'patches' $rawParams
-      $patches = $patches -replace '(?m)^ *#.*\r\n','' -replace ' +',' ' -replace ' ?(:|=) ?','$1' -replace '0x([0-9a-f])','$1' # remove spaces, comment lines, and prefix 0x
+      $patches = $patches -replace ' *#.*(?=\r\n)','' -replace ' +',' ' -replace ' ?(:|=) ?','$1' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
       $bytes = [System.IO.File]::ReadAllBytes($file)
       $patches -split " ?`r`n ?" -match '\S' | %{
         $offset, $data = $_.replace(':', ' ').split(' ') | %{ [int32]"0x$_" }
