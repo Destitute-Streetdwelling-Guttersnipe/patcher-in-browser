@@ -34,6 +34,7 @@ cat <<END-OF-HTML
 <html>
 <head>
     <title>PowerBashell Patcher</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg" type="image/x-icon">
     <style>
@@ -108,6 +109,8 @@ function response_ok() { param($html, $response)
   $response.OutputStream.Write($buffer, 0, $buffer.Length)
   $response.OutputStream.Close()
 }
+$lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
+$html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
 $listener = [System.Net.HttpListener]::New()
 $listener.Prefixes.Add("http://localhost:8088/")
 $listener.Start()
@@ -137,10 +140,10 @@ while ($listener.IsListening) {
       ([byte[]]$data).CopyTo($bytes, $offset)
     }
     [System.IO.File]::WriteAllBytes($file, $bytes)
+    $result = 'OK'
   }
   if ($request.RawUrl -eq '/') {
-    [string]$html = "<h1>A PowerShell Web Server</h1><p>home page</p>"
-    response_ok $html $context.Response
+    response_ok $html.Replace('$1', $result) $context.Response
   }
 }
-# try {} finally { $listener.Stop() }
+$listener.Stop()
