@@ -100,7 +100,7 @@ exit ### NOTE: the end of bash script
 Add-Type -AssemblyName System.Web
 function get_param() { param($name, $query)
   if ($query -match "$name=([^&]+)") {
-    return [System.Web.HttpUtility]::UrlDecode($Matches[1])
+    return [System.Web.HttpUtility]::UrlDecode($Matches[1].replace('%0D%0A','%0A')) # convert line-endings to Unix style
   }
 }
 function response_ok() { param($html, $response)
@@ -131,16 +131,16 @@ while ($listener.IsListening) {
       $rawParams = $reader.ReadToEnd()
       $file = get_param 'file' $rawParams
       $patches = get_param 'patches' $rawParams
-      $patches = $patches -replace ' *#.*(?=\r\n)','' -replace ' +',' ' -replace ' ?(:|=) ?','$1' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
+      $patches = $patches -replace ' *#.*','' -replace ' +',' ' -replace ' ?(:|=) ?','$1' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
       $bytes = [System.IO.File]::ReadAllBytes($file)
-      $patches -split " ?`r`n ?" -match '\S' | %{
+      $patches -split " ?`n` ?" -match '\S' | %{
         $offset, $data = $_.replace(':', ' ').split(' ') | %{ [int32]"0x$_" }
         ([byte[]]$data).CopyTo($bytes, $offset)
       }
       [System.IO.File]::WriteAllBytes($file, $bytes)
       $result = 'OK'
     } catch { $result = $_ }
-    write-host "File : $file`r`nPatches : $patches`r`nResult: $result"
+    write-host "File : $file`nPatches : $patches`nResult: $result"
   }
   if ($request.RawUrl -eq '/') {
     response_ok $html.Replace('$1', $result) $context.Response
