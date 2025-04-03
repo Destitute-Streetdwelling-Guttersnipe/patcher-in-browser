@@ -6,15 +6,15 @@ echo `# <#` >/dev/null # avoid using #＞ directly, use #""> or something simila
 
 set -eo pipefail
 
-main() { [[ $1 == 'request' ]] && on_http_request || start_http_server 8088 ;}
-start_http_server() {
+main() { [[ $1 == 'request' ]] && on_request || start_server 8088 ;}
+start_server() {
   echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m" >&2
   socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'${BASH_SOURCE[0]}' request"
 }
-on_http_request() {
+on_request() {
   read -r method path protocol
   echo "------- Request : $method $path $protocol" >&2
-  if [[ $method == 'POST' ]]; then
+  if [[ $path == "/" && $method == 'POST' ]]; then
     while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
     file=$(get_param file "$query")
     patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ +/ /g; s/ ?(:|=) ?/\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
@@ -22,7 +22,8 @@ on_http_request() {
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
   fi
-  [[ $path == "/" ]] && response_ok "$(make_html "$msg")"
+  [[ $path == "/"    ]] && response_ok "$(make_html "$msg")" || :
+  [[ $path == "/end" ]] && response_ok Kthxbye && kill $SOCAT_PPID || :
 }
 response_ok() { echo -ne "HTTP/1.1 200 OK\r\n\r\n$1" ;}
 response_ok() ( LANG=C; echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: ${#1}\r\n\r\n$1\r\n" ) # need LANG=C to set the correct content length in bytes
@@ -38,6 +39,7 @@ cat <<END-OF-HTML
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg" type="image/x-icon">
     <style>
+        @media (prefers-color-scheme: light) {}
         a, input, textarea, h3 { display: inline-block; width: 100%; margin: 0 0 20px; padding: 3px; border-width: 3px }
         body, body * { background: #333; color: #4a4; max-width: 1024px; box-sizing: border-box; zoom: 1.5; text-align: center }
         form > *:hover, h3:hover { background: #345; color: #ddd; outline: 2px dotted yellow }
@@ -63,6 +65,7 @@ cat <<END-OF-HTML
   </form>
   <label for="result">Result</label>
   <textarea id="result" rows=4 readonly>$1</textarea>
+  <a href="/end">Exit</a>
   <script type="text/javascript">
         var el = (id) => document.getElementById(id)
         function putPatchesIntoUrl() {
@@ -129,11 +132,8 @@ while ($listener.IsListening) {
   $context = $listener.GetContext()
   $request = $context.Request
   write-host "------- Request : $($request.HttpMethod) $($request.RawUrl)" -f 'gre'
-  if ($request.RawUrl -eq '/end') {
-    $listener.Stop()
-  }
   $result = ''
-  if ($request.HttpMethod -eq 'POST') {
+  if ($request.RawUrl -eq '/' -and $request.HttpMethod -eq 'POST') {
     try {
       $reader = [System.IO.StreamReader]::New($request.InputStream, $request.ContentEncoding)
       $rawParams = $reader.ReadToEnd()
@@ -147,6 +147,10 @@ while ($listener.IsListening) {
   }
   if ($request.RawUrl -eq '/') {
     response_ok $html.Replace('$1', $result) $context.Response
+  }
+  if ($request.RawUrl -eq '/end') {
+    response_ok Kthxbye $context.Response
+    break
   }
 }
 $listener.Stop()
