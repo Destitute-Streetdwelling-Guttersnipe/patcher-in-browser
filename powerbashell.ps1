@@ -8,6 +8,7 @@ set -eo pipefail
 
 main() { [[ $1 == 'request' ]] && on_request || start_server 8088 ;}
 start_server() {
+  read -rsn1 -t0.6 key || nohup open http://localhost:$1 # open browser if no key was pressed within 0.6 second
   echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m" >&2
   socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'${BASH_SOURCE[0]}' request"
 }
@@ -127,6 +128,8 @@ $listener.Prefixes.Add("http://localhost:8088/")
 $listener.Start()
 if ($listener.IsListening) {
   write-host " Listening at $($listener.Prefixes) " -f 'black' -b 'gre'
+  Start-Sleep 0.6
+  if (![System.Console]::KeyAvailable) { start $listener.Prefixes } # open browser if no key was pressed within 0.6 second
 }
 while ($listener.IsListening) {
   $context = $listener.GetContext()
