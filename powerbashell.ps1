@@ -25,7 +25,7 @@ on_http_request() {
   [[ $path == "/" ]] && response_ok "$(make_html "$msg")"
 }
 response_ok() { echo -ne "HTTP/1.1 200 OK\r\n\r\n$1" ;}
-response_ok() { echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: ${#1}\r\n\r\n$1\r\n" ;}
+response_ok() ( LANG=C; echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: ${#1}\r\n\r\n$1\r\n" ) # need LANG=C to set the correct content length in bytes
 # get value of query parameter, convert line-endings to Unix style, decode URL parameters
 get_param() { printf %b "$(<<<"$2" grep -oP "(?<=$1=)[^&]+" | sed -E 's/\+/ /g; s/%0D%0A/\n/gi; s/%([0-9a-f]{2})/\\x\1/gi')" ;}
 make_html() {
