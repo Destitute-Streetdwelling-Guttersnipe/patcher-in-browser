@@ -8,7 +8,7 @@ set -eo pipefail
 
 main() { [[ $1 == 'request' ]] && on_http_request || start_http_server 8088 ;}
 start_http_server() {
-  echo "Listening on port $1"
+  echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m" >&2
   socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'${BASH_SOURCE[0]}' request"
 }
 on_http_request() {
@@ -20,7 +20,7 @@ on_http_request() {
     patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ +/ /g; s/ ?(:|=) ?/\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
     result=$(<<<"$patches" xxd -r -c256 - "$file" 2>&1)
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
-    msg=${result:-ok}
+    msg=${result:-OK}
   fi
   [[ $path == "/" ]] && response_ok "$(make_html "$msg")"
 }
@@ -62,7 +62,7 @@ cat <<END-OF-HTML
     <input type="submit" value="【  Patch file  】" title="»»››>>＞＞ click me ＜＜<<‹‹««"/>
   </form>
   <label for="result">Result</label>
-  <textarea id="result" rows=8 wrap="off" readonly>$1</textarea>
+  <textarea id="result" rows=4 readonly>$1</textarea>
   <script type="text/javascript">
         var el = (id) => document.getElementById(id)
         function putPatchesIntoUrl() {
@@ -109,6 +109,14 @@ function response_ok() { param($html, $response)
   $response.OutputStream.Write($buffer, 0, $buffer.Length)
   $response.OutputStream.Close()
 }
+function patch_file() { param($file, $patches)
+  $bytes = [System.IO.File]::ReadAllBytes($file)
+  $patches -split '\n' -match '\S' | %{
+    $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int32]"0x$_" }
+    ([byte[]]$data).CopyTo($bytes, $offset)
+  }
+  [System.IO.File]::WriteAllBytes($file, $bytes)
+}
 $lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
 $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
 $listener = [System.Net.HttpListener]::New()
@@ -132,12 +140,7 @@ while ($listener.IsListening) {
       $file = get_param 'file' $rawParams
       $patches = get_param 'patches' $rawParams
       $patches = $patches -replace ' *#.*','' -replace ' +',' ' -replace ' ?(:|=) ?','$1' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
-      $bytes = [System.IO.File]::ReadAllBytes($file)
-      $patches -split '\n' -match '\S' | %{
-        $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int32]"0x$_" }
-        ([byte[]]$data).CopyTo($bytes, $offset)
-      }
-      [System.IO.File]::WriteAllBytes($file, $bytes)
+      patch_file $file $patches
       $result = 'OK'
     } catch { $result = $_ }
     write-host "File : $file`nPatches : $patches`nResult: $result"
