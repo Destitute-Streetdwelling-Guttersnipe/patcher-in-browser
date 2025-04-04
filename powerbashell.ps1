@@ -5,8 +5,8 @@
 echo `# <#` >/dev/null # avoid using #＞ directly, use #""> or something similar
 
 set -eo pipefail
-
-main() { [[ $1 == 'request' ]] && on_request || start_server 8088 ;}
+port=8088
+main() { [[ $1 == 'request' ]] && on_request || start_server $port ;}
 start_server() {
   read -rsn1 -t0.6 key || nohup open http://localhost:$1 # open browser if no key was pressed within 0.6 second
   echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m" >&2
@@ -121,9 +121,9 @@ function patch_file() { param($file, $patches)
   }
   [System.IO.File]::WriteAllBytes($file, $bytes)
 }
-function start_server() {
+function start_server() { param($port)
   $listener = [System.Net.HttpListener]::New()
-  $listener.Prefixes.Add("http://localhost:8088/")
+  $listener.Prefixes.Add("http://localhost:$port/")
   $listener.Start()
   if ($listener.IsListening) {
     write-host " Listening at $($listener.Prefixes) " -f 'black' -b 'gre'
@@ -135,7 +135,8 @@ function start_server() {
 function main() {
   $lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
   $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
-  $listener = start_server
+  $port = [Regex]::Match($lines,"port=(.+)").Groups[1].Value
+  $listener = start_server $port
   while ($listener.IsListening -and !(on_request $listener.GetContext() $html)) {}
   $listener.Stop()
 }
