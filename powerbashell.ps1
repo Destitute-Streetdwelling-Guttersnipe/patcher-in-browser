@@ -121,8 +121,6 @@ function patch_file() { param($file, $patches)
   }
   [System.IO.File]::WriteAllBytes($file, $bytes)
 }
-$lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
-$html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
 function start_server() {
   $listener = [System.Net.HttpListener]::New()
   $listener.Prefixes.Add("http://localhost:8088/")
@@ -135,16 +133,15 @@ function start_server() {
   return $listener
 }
 function main() {
+  $lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
+  $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
   $listener = start_server
-  while ($listener.IsListening) {
-    if (on_request $listener.GetContext() $html) { break }
-  }
+  while ($listener.IsListening -and !(on_request $listener.GetContext() $html)) {}
   $listener.Stop()
 }
 function on_request() { param($context, $html)
   $request = $context.Request
   write-host "------- Request : $($request.HttpMethod) $($request.RawUrl)" -f 'gre'
-  $result = ''
   if ($request.RawUrl -eq '/' -and $request.HttpMethod -eq 'POST') {
     try {
       $reader = [System.IO.StreamReader]::New($request.InputStream, $request.ContentEncoding)
