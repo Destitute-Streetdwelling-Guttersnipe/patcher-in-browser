@@ -123,16 +123,23 @@ function patch_file() { param($file, $patches)
 }
 $lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
 $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
-$listener = [System.Net.HttpListener]::New()
-$listener.Prefixes.Add("http://localhost:8088/")
-$listener.Start()
-if ($listener.IsListening) {
-  write-host " Listening at $($listener.Prefixes) " -f 'black' -b 'gre'
-  Start-Sleep 0.6
-  if (![System.Console]::KeyAvailable) { start $listener.Prefixes } # open browser if no key was pressed within 0.6 second
+function start_server() {
+  $listener = [System.Net.HttpListener]::New()
+  $listener.Prefixes.Add("http://localhost:8088/")
+  $listener.Start()
+  if ($listener.IsListening) {
+    write-host " Listening at $($listener.Prefixes) " -f 'black' -b 'gre'
+    Start-Sleep 0.6
+    if (![System.Console]::KeyAvailable) { start $listener.Prefixes } # open browser if no key was pressed within 0.6 second
+  }
+  return $listener
 }
+$listener = start_server
 while ($listener.IsListening) {
-  $context = $listener.GetContext()
+  if (on_request $listener.GetContext() $html) { break }
+}
+$listener.Stop()
+function on_request() { param($context, $html)
   $request = $context.Request
   write-host "------- Request : $($request.HttpMethod) $($request.RawUrl)" -f 'gre'
   $result = ''
@@ -153,7 +160,6 @@ while ($listener.IsListening) {
   }
   if ($request.RawUrl -eq '/end') {
     response_ok Kthxbye $context.Response
-    break
+    return $true
   }
 }
-$listener.Stop()
