@@ -134,11 +134,13 @@ function start_server() {
   }
   return $listener
 }
-$listener = start_server
-while ($listener.IsListening) {
-  if (on_request $listener.GetContext() $html) { break }
+function main() {
+  $listener = start_server
+  while ($listener.IsListening) {
+    if (on_request $listener.GetContext() $html) { break }
+  }
+  $listener.Stop()
 }
-$listener.Stop()
 function on_request() { param($context, $html)
   $request = $context.Request
   write-host "------- Request : $($request.HttpMethod) $($request.RawUrl)" -f 'gre'
@@ -155,11 +157,7 @@ function on_request() { param($context, $html)
     } catch { $result = $_ }
     write-host "File : $file`nPatches : $patches`nResult: $result"
   }
-  if ($request.RawUrl -eq '/') {
-    response_ok $html.Replace('$1', $result) $context.Response
-  }
-  if ($request.RawUrl -eq '/end') {
-    response_ok Kthxbye $context.Response
-    return $true
-  }
+  if ($request.RawUrl -eq '/') { response_ok $html.Replace('$1', $result) $context.Response }
+  if ($request.RawUrl -eq '/end') { response_ok Kthxbye $context.Response ; return $true }
 }
+main
