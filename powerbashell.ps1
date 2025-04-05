@@ -8,13 +8,13 @@ set -eo pipefail
 port=8088
 main() { [[ $1 == 'request' ]] && on_request || start_server $port ;}
 start_server() {
-  read -rsn1 -t0.6 key || nohup open http://localhost:$1 # open browser if no key was pressed within 0.6 second
-  echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m" >&2
+  read -rsn1 -t0.6 key || { open http://localhost:$1 & } # open browser if no key was pressed within 0.6 second
+  echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m"
   socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'${BASH_SOURCE[0]}' request"
 }
 on_request() {
   read -r method path protocol
-  echo "------- Request : $method $path $protocol" >&2
+  echo -e "\e[1;32m ------ Request : $method $path $protocol \e[0m" >&2
   if [[ $path == "/" && $method == 'POST' ]]; then
     while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
     file=$(get_param file "$query")
