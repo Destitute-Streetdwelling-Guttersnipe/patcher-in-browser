@@ -132,7 +132,7 @@ function start_server() { param($port)
 }
 function main() {
   $lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
-  $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
+  $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value.Replace('\\\\','\')
   $port = [Regex]::Match($lines,"port=(.+)").Groups[1].Value
   $listener = start_server $port
   while ($listener.IsListening -and !(on_request $listener.GetContext() $html)) {}
