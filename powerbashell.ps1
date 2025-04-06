@@ -8,15 +8,22 @@ set -eo pipefail
 port=8088
 main() { [[ $1 == 'request' ]] && on_request || start_server $port ;}
 start_server() {
+  hash nc || hash socat || { echo -e "\e[1;31m netcat or socat is not installed \e[0m" ; exit 1 ;}
   read -rsn1 -t0.6 key || { open http://localhost:$1 & } # open browser if no key was pressed within 0.6 second
   echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m"
-  socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'${BASH_SOURCE[0]}' request"
+  if hash nc ;then
+    mkfifo ${out="${TMPDIR:-/tmp/}.${BASH_SOURCE[0]##*/}-$RANDOM$RANDOM"}
+    trap 'rm "$out"' EXIT ERR
+    while nc -l -p $1 <"$out" | on_request >"$out" ;do : ;done
+  elif hash socat ;then
+    socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'${BASH_SOURCE[0]}' request"
+  fi
 }
 on_request() {
   read -r method path protocol
   echo -e "\e[1;32m ------ Request : $method $path $protocol \e[0m" >&2
+  while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
   if [[ $path == "/" && $method == 'POST' ]]; then
-    while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
     file=$(get_param file "$query")
     patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ +/ /g; s/ ?(:|=) ?/\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
     result=$(<<<"$patches" xxd -r -c256 - "$file" 2>&1)
@@ -24,7 +31,8 @@ on_request() {
     msg=${result:-OK}
   fi
   [[ $path == "/"    ]] && response_ok "$(make_html "$msg")" || :
-  [[ $path == "/end" ]] && response_ok Kthxbye && kill $SOCAT_PPID || :
+  [[ $path == "/end" ]] && response_ok Kthxbye || :
+  [[ $path == "/end" ]] && { [[ $SOCAT_PPID ]] && kill "$SOCAT_PPID" || exit 1 ;} || :
 }
 response_ok() { echo -ne "HTTP/1.1 200 OK\r\n\r\n$1" ;}
 response_ok() ( LANG=C; echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: ${#1}\r\n\r\n$1\r\n" ) # need LANG=C to set the correct content length in bytes
@@ -88,16 +96,6 @@ cat <<END-OF-HTML
 </html>
 END-OF-HTML
 }
-# while true; do
-  # res="$(echo -ne "HTTP/1.1 200 OK\r\nContent-Length: ${#html}\r\n\r\n$html")"
-  # req="$(printf %s "$res" | nc -l -p 8080 | grep -oP "^(GET|POST) [^ ]+")"
-  # echo "$req"
-  # case $req in
-    # "GET /" ) html="$(make_html 11)" ;;
-    # * ) html="$(make_html 22)" ;;
-  # esac
-# done
-
 main $*
 exit ### NOTE: the end of bash script
 #> > $null
