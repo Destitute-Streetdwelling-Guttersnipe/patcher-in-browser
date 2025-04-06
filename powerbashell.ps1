@@ -23,16 +23,24 @@ on_request() {
   read -r method path protocol
   echo -e "\e[1;32m ------ Request : $method $path $protocol \e[0m" >&2
   while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
-  if [[ $path == "/" && $method == 'POST' ]]; then
+  if [[ $path == "/" && $method == 'POST' ]] ;then
     file=$(get_param file "$query")
-    patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ +/ /g; s/ ?(:|=) ?/\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
-    result=$(<<<"$patches" xxd -r -c256 - "$file" 2>&1)
+    patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ +/ /g; /^ ?$/d; s/ ?(:|=) ?/\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
+    if [[ ${result="$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]?|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')"} ]]
+    then result="Invalid patches: $result"
+    else result=$(<<<"$patches" patch_file "$file" 2>&1) ;fi
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
   fi
   [[ $path == "/"    ]] && response_ok "$(make_html "$msg")" || :
   [[ $path == "/end" ]] && response_ok Kthxbye || :
   [[ $path == "/end" ]] && { [[ $SOCAT_PPID ]] && kill "$SOCAT_PPID" || exit 1 ;} || :
+}
+hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
+patch_file() {
+  while read -r line ;do # replace with sed or patch with xxd
+    [[ $line =~ '=' ]] && sed "s=$(hex $line)=" -i "$1" || <<<"$line" xxd -r -c256 - "$1"
+  done
 }
 response_ok() { echo -ne "HTTP/1.1 200 OK\r\n\r\n$1" ;}
 response_ok() ( LANG=C; echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: ${#1}\r\n\r\n$1\r\n" ) # need LANG=C to set the correct content length in bytes
