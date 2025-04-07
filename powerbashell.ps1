@@ -3,9 +3,9 @@
 
 ### NOTE: bash script is wrapped in a PowerShell comment block (see https://cspotcode.com/posts/polyglot-powershell-and-bash-script)
 echo `# <#` >/dev/null # avoid using #＞ directly, use #""> or something similar
-
 set -eo pipefail
 port=8088
+
 main() { [[ $1 == 'request' ]] && on_request || start_server $port ;}
 start_server() {
   hash nc || hash socat || { echo -e "\e[1;31m netcat or socat is not installed \e[0m" ; exit 1 ;}
@@ -28,7 +28,7 @@ on_request() {
     patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ +/ /g; /^ ?$/d; s/ ?(:|=) ?/\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
     if [[ ${result="$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]?|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')"} ]]
     then result="Invalid patches: $result"
-    else result=$(<<<"$patches" patch_file "$file" 2>&1) ;fi
+    else result=$(<<<"$patches" patch_file "$file" 2>&1 | uniq -u) ;fi
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
   fi
