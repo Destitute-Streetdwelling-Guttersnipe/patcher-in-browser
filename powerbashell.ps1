@@ -119,17 +119,18 @@ function response_ok() { param($html, $response)
   $response.OutputStream.Close()
 }
 function patch_file() { param($file, $patches)
-  [Text.StringBuilder]$sb = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
+  $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
   $patches.Trim() -split '\n' | %{
     if ($_ -match '=') {
-      $search, $substitute = $_.Trim().Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
-      $sb.Replace($search, $substitute)
+      $search, $changes = $_.Trim().Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
+      $offset = $text.IndexOf($search)
     } else {
       $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int]"0x$_" }
-      $sb.Replace($sb.ToString($offset, $data.Length), (-join [char[]]$data), $offset, $data.Length)
+      $changes = -join [char[]]$data
     }
+    if ($offset -ge 0) { $text = $text.Remove($offset, $changes.Length).Insert($offset, $changes) }
   }
-  [IO.File]::WriteAllText($file, "$sb", [Text.Encoding]::GetEncoding(1256))
+  [IO.File]::WriteAllText($file, $text, [Text.Encoding]::GetEncoding(1256))
 }
 function start_server() { param($port)
   $listener = [System.Net.HttpListener]::New()
