@@ -121,8 +121,16 @@ function response_ok() { param($html, $response)
 function patch_file() { param($file, $patches)
   $bytes = [System.IO.File]::ReadAllBytes($file)
   $patches.Trim() -split '\n' | %{
-    $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int32]"0x$_" }
-    ([byte[]]$data).CopyTo($bytes, $offset)
+    if ($_ -match '=') {
+      $search, $substitute = $_.Trim().Split('=')
+      $search     = -join ( -split $search     | %{ [char]([byte]"0x$_") } )
+      $substitute = -join ( -split $substitute | %{ [char]([byte]"0x$_") } )
+      $encoder = [System.Text.Encoding]::GetEncoding('windows-1256')
+      $bytes = $encoder.GetBytes($encoder.GetString($bytes).Replace($search, $substitute))
+    } else {
+      $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int32]"0x$_" }
+      ([byte[]]$data).CopyTo($bytes, $offset)
+    }
   }
   [System.IO.File]::WriteAllBytes($file, $bytes)
 }
@@ -155,12 +163,14 @@ function on_request() { param($context, $html)
       $file = get_param 'file' $rawParams
       $patches = get_param 'patches' $rawParams
       $patches = $patches -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '(?m)^ ?\n','' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
-      patch_file $file $patches
-      $result = 'OK'
+      $invalid = $patches -split "`n" -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' -join "`n"
+      if ($invalid) { $result = "Invalid patches: $invalid" }
+      else { patch_file $file $patches }
     } catch { $result = $_ }
     write-host "File : $file`nPatches : $patches`nResult: $result"
+    $msg = $result -replace '^$','OK'
   }
-  if ($request.RawUrl -eq '/') { response_ok $html.Replace('$1', $result) $context.Response }
+  if ($request.RawUrl -eq '/') { response_ok $html.Replace('$1', $msg) $context.Response }
   if ($request.RawUrl -eq '/end') { response_ok Kthxbye $context.Response ; return $true }
 }
 main
