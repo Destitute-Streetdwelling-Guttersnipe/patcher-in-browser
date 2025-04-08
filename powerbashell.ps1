@@ -25,9 +25,9 @@ on_request() {
   while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
   if [[ $path == "/" && $method == 'POST' ]] ;then
     file=$(get_param file "$query")
-    patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ +/ /g; /^ ?$/d; s/ ?(:|=) ?/\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
-    if [[ ${result="$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]?|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')"} ]]
-    then result="Invalid patches: $result"
+    patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ *([: =]) */\1/g; /^ ?$/d; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
+    if [[ ${invalid="$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')"} ]]
+    then result="Invalid patches: $invalid"
     else result=$(<<<"$patches" patch_file "$file" 2>&1 | uniq -u) ;fi
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
@@ -120,7 +120,7 @@ function response_ok() { param($html, $response)
 }
 function patch_file() { param($file, $patches)
   $bytes = [System.IO.File]::ReadAllBytes($file)
-  $patches -split '\n' -match '\S' | %{
+  $patches.Trim() -split '\n' | %{
     $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int32]"0x$_" }
     ([byte[]]$data).CopyTo($bytes, $offset)
   }
@@ -154,7 +154,7 @@ function on_request() { param($context, $html)
       $rawParams = $reader.ReadToEnd()
       $file = get_param 'file' $rawParams
       $patches = get_param 'patches' $rawParams
-      $patches = $patches -replace ' *#.*','' -replace ' +',' ' -replace ' ?(:|=) ?','$1' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
+      $patches = $patches -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '(?m)^ ?\n','' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
       patch_file $file $patches
       $result = 'OK'
     } catch { $result = $_ }
