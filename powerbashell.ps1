@@ -119,20 +119,17 @@ function response_ok() { param($html, $response)
   $response.OutputStream.Close()
 }
 function patch_file() { param($file, $patches)
-  $bytes = [System.IO.File]::ReadAllBytes($file)
+  [Text.StringBuilder]$sb = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
   $patches.Trim() -split '\n' | %{
     if ($_ -match '=') {
-      $search, $substitute = $_.Trim().Split('=')
-      $search     = -join ( -split $search     | %{ [char]([byte]"0x$_") } )
-      $substitute = -join ( -split $substitute | %{ [char]([byte]"0x$_") } )
-      $encoder = [System.Text.Encoding]::GetEncoding('windows-1256')
-      $bytes = $encoder.GetBytes($encoder.GetString($bytes).Replace($search, $substitute))
+      $search, $substitute = $_.Trim().Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
+      $sb.Replace($search, $substitute)
     } else {
-      $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int32]"0x$_" }
-      ([byte[]]$data).CopyTo($bytes, $offset)
+      $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int]"0x$_" }
+      $sb.Replace($sb.ToString($offset, $data.Length), (-join [char[]]$data), $offset, $data.Length)
     }
   }
-  [System.IO.File]::WriteAllBytes($file, $bytes)
+  [IO.File]::WriteAllText($file, "$sb", [Text.Encoding]::GetEncoding(1256))
 }
 function start_server() { param($port)
   $listener = [System.Net.HttpListener]::New()
@@ -158,8 +155,7 @@ function on_request() { param($context, $html)
   write-host "------- Request : $($request.HttpMethod) $($request.RawUrl)" -f 'gre'
   if ($request.RawUrl -eq '/' -and $request.HttpMethod -eq 'POST') {
     try {
-      $reader = [System.IO.StreamReader]::New($request.InputStream, $request.ContentEncoding)
-      $rawParams = $reader.ReadToEnd()
+      $rawParams = [IO.StreamReader]::New($request.InputStream, $request.ContentEncoding).ReadToEnd()
       $file = get_param 'file' $rawParams
       $patches = get_param 'patches' $rawParams
       $patches = $patches -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '(?m)^ ?\n','' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
