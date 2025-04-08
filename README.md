@@ -7,7 +7,7 @@ This is for the CLIphobia who wanna patch but don't wanna touch the command prom
 
 Each line contains what to patch (hex bytes) and how to patch (offset or bytes to be searched).
 
-Comment lines (starting with '#') are ignored. Comment should not use `~` (tilde) since it's used for serialization of patches in URL. You can replace `~` with $HOME (in path), or %7E (in URL). 
+Comment lines (starting with '#') are ignored. Comment should not contain `~` (tilde) since it's used for serialization of patches in URL. You can replace `~` with $HOME (in path), or %7E (in URL). 
 
 Example of patching at specified offset with hex bytes:
 
@@ -47,7 +47,10 @@ Other tools that also support patches in URL:
 * My fork of RomPatcher.js (patch files in URL) https://destitute-streetdwelling-guttersnipe.github.io/RomPatcher.js/#{"PATCHER":[{"name":"Boaty-McBoatface","file":"data:;base64,VVBTMQAgboMAIG6D+pUXwPqVF8AybecD"}]}
 * CyberChef (search & replace hex string) https://gchq.github.io/CyberChef/#recipe=To_Hex('Colon',0)Find_/_Replace({'option':'Regex','string':'97:94:0D:00'},'79:94:0D:00',true,false,true,false)From_Hex('Auto')
 
-## Extra: polyglot patcher can be used as a bash script or PowerShell script
+## Extra: a polyglot patcher (for bash and PowerShell)
 
 `powerbashell.ps1` can be run as a bash script or PowerShell script.
-The user interface is a web app at http://localhost:8088/
+
+The user interface is a web app at `http://localhost:8088/`
+
+Patches can be shared via URL, such as `http://localhost:8088/#{"name":"Boaty-McBoatface","file":"/path/to/file","patches":["DEADBEEF~0F~F1~CE","CAFEBABE~FE~ED~FA~CE"]}`
