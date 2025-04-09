@@ -60,9 +60,9 @@ cat <<END-OF-HTML
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg" type="image/x-icon">
     <style>
-        body, body * { background: #333; color: #4c4; max-width: 1024px; box-sizing: border-box; zoom: 1.5; text-align: center; margin: auto }
-        a, input, textarea, h3 { display: inline-block; width: 95%; margin: 4px 0 15px; padding: 3px; border-width: 3px }
-        form > *:hover, a:hover { background: #383; color: #eee; outline: 2px dotted yellow }
+        body, body * { background: #333; color: #4c4; max-width: 1024px; box-sizing: border-box; zoom: 1.25; text-align: center; margin: auto }
+        a, input, textarea, h3 { display: inline-block; width: 95%; margin: 2px 0 10px; padding: 3px; border-width: 3px }
+        form > *:hover, a:hover { background: #383; color: #eee; outline: 3px dotted yellow }
     </style>
 </head>
 <body>
