@@ -9,8 +9,8 @@ port=8088
 main() { [[ $1 == 'request' ]] && on_request || start_server $port ;}
 start_server() {
   hash nc || hash socat || { echo -e "\e[1;31m netcat or socat is not installed \e[0m" ; exit 1 ;}
-  read -rsn1 -t0.6 key || { open http://localhost:$1 & } # open browser if no key was pressed within 0.6 second
   echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m"
+  read -rsn1 -t0.6 key || { open http://localhost:$1 & } # open browser if no key was pressed within 0.6 second
   if hash nc ;then
     mkfifo ${out="${TMPDIR:-/tmp/}.${BASH_SOURCE[0]##*/}-$RANDOM$RANDOM"}
     trap 'rm "$out"' EXIT ERR
@@ -36,6 +36,10 @@ on_request() {
   [[ $path == "/end" ]] && response_ok Kthxbye || :
   [[ $path == "/end" ]] && { [[ $SOCAT_PPID ]] && kill "$SOCAT_PPID" || exit 1 ;} || :
 }
+hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa bb c d | xxd -r - filename`
+  patchdd() { dd seek=$(($2)) of="$1" bs=1 conv=notrunc status=none ;}
+  while IFS=': ' read o hex ;do printf \\x${hex// /\\x} | patchdd "${!#}" 0x$o ;done
+)
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
 patch_file() {
   while read -r line ;do # replace with sed or patch with xxd
@@ -95,9 +99,7 @@ cat <<END-OF-HTML
             el('name').innerText = params.name
             el('file').value = params.file
             el('patches').value = params.patches.join('\\\\n').replaceAll('~', ' ')
-        } catch(ex) {
-            console.warn('Error: cannot parse parameters from URL hash', ex)
-        }
+        } catch(ex) { console.warn('Error: cannot parse parameters from URL hash', ex) }
   </script>
 </body>
 </html>
