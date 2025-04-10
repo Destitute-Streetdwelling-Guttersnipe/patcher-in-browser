@@ -49,8 +49,16 @@ Other tools that also support patches in URL:
 
 ## Extra: a polyglot patcher (for bash and PowerShell)
 
-`powerbashell.ps1` can be run as a bash script or PowerShell script.
+`powerbashell.ps1` can be run as a bash script or PowerShell script, but it has a web-based UI instead of textual UI (TUI).
 
 The user interface is a web app at `http://localhost:8088/`
 
 Patches can be shared via URL, such as `http://localhost:8088/#{"name":"Boaty-McBoatface","file":"/path/to/file","patches":["DEADBEEF~0F~F1~CE","CAFEBABE~FE~ED~FA~CE"]}`
+
+## Extraneous Extra: another polyglot patcher for the CLI fanatics
+
+`bash-power-patcher.ps1` is a patcher which can be run in bash and PowerShell.
+Using interactive TUI, it waits for user to type in target file and patches.
+It can also read user input sent via a shell pipe.
+
+Obviously, its source code is much simpler than `powerbashell.ps1`. The LOC count is less than half the web-based patcher with the same feature set.
