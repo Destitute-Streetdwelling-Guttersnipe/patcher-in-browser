@@ -122,12 +122,12 @@ function response_ok() { param($html, $response)
 }
 function patch_file() { param($file, $patches)
   $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
-  $patches.Trim() -split '\n' | %{
+  $patches.Trim() -split ' ?\n ?' | %{
     if ($_ -match '=') {
-      $search, $changes = $_.Trim().Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
+      $search, $changes = $_.Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
       $offset = $text.IndexOf($search)
     } else {
-      $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int]"0x$_" }
+      $offset, $data = $_.Replace(':', ' ').Split(' ') | %{ [int]"0x$_" }
       $search = $changes = -join [char[]]$data
     }
     if ($offset -ge 0) { $text = $text.Remove($offset, $search.Length).Insert($offset, $changes) }
