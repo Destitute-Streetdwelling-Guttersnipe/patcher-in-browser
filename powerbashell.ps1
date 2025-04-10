@@ -128,9 +128,9 @@ function patch_file() { param($file, $patches)
       $offset = $text.IndexOf($search)
     } else {
       $offset, $data = $_.Trim().Replace(':', ' ').Split(' ') | %{ [int]"0x$_" }
-      $changes = -join [char[]]$data
+      $search = $changes = -join [char[]]$data
     }
-    if ($offset -ge 0) { $text = $text.Remove($offset, $changes.Length).Insert($offset, $changes) }
+    if ($offset -ge 0) { $text = $text.Remove($offset, $search.Length).Insert($offset, $changes) }
   }
   [IO.File]::WriteAllText($file, $text, [Text.Encoding]::GetEncoding(1256))
 }
