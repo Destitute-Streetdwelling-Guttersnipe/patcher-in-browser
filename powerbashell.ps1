@@ -43,7 +43,7 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
 patch_file() {
   while read -r line ;do # replace with sed or patch with xxd
-    [[ $line =~ '=' ]] && sed "s=$(hex $line)=" -i "$1" || <<<"$line" xxd -r -c256 - "$1"
+    if [[ $line =~ '=' ]] ;then sed "s=$(hex $line)=" -i "$1" ;else <<<"$line" xxd -r -c256 - "$1" ;fi
   done
 }
 response_ok() { echo -ne "HTTP/1.1 200 OK\r\n\r\n$1" ;}
