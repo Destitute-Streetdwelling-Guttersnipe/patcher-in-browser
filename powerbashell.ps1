@@ -26,7 +26,7 @@ on_request() {
   if [[ $path == "/" && $method == 'POST' ]] ;then
     file=$(get_param file "$query")
     patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ *([: =]) */\1/g; /^ ?$/d; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
-    if [[ ${invalid="$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')"} ]]
+    if invalid=$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')
     then result="Invalid patches: $invalid"
     else result=$(<<<"$patches" patch_file "$file" 2>&1 | uniq -u) ;fi
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
@@ -134,12 +134,12 @@ function patch_file() { param($file, $patches)
   }
   [IO.File]::WriteAllText($file, $text, [Text.Encoding]::GetEncoding(1256))
 }
-function start_server() { param($port)
+function start_server() { param($port, $e = [char]0x1b)
   $listener = [System.Net.HttpListener]::New()
   $listener.Prefixes.Add("http://localhost:$port/")
   $listener.Start()
   if ($listener.IsListening) {
-    write-host " Listening at $($listener.Prefixes) " -f 'black' -b 'gre'
+    Write-Host "$e[1;42m Listening at $($listener.Prefixes) $e[0m"
     Start-Sleep 0.6
     if (![System.Console]::KeyAvailable) { start $listener.Prefixes } # open browser if no key was pressed within 0.6 second
   }
@@ -153,9 +153,9 @@ function main() {
   while ($listener.IsListening -and !(on_request $listener.GetContext() $html)) {}
   $listener.Stop()
 }
-function on_request() { param($context, $html)
+function on_request() { param($context, $html, $e = [char]0x1b)
   $request = $context.Request
-  write-host "------- Request : $($request.HttpMethod) $($request.RawUrl)" -f 'gre'
+  Write-Host "$e[1;32m ------- Request : $($request.HttpMethod) $($request.RawUrl) $e[0m"
   if ($request.RawUrl -eq '/' -and $request.HttpMethod -eq 'POST') {
     try {
       $rawParams = [IO.StreamReader]::New($request.InputStream, $request.ContentEncoding).ReadToEnd()
@@ -166,7 +166,7 @@ function on_request() { param($context, $html)
       if ($invalid) { $result = "Invalid patches: $invalid" }
       else { patch_file $file $patches }
     } catch { $result = $_ }
-    write-host "File : $file`nPatches : $patches`nResult: $result"
+    Write-Host "File : $file`nPatches : $patches`nResult: $result"
     $msg = $result -replace '^$','OK'
   }
   if ($request.RawUrl -eq '/') { response_ok $html.Replace('$1', $msg) $context.Response }
