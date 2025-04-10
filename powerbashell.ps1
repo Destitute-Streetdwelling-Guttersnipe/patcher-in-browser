@@ -156,20 +156,20 @@ function main() {
 function on_request() { param($context, $html, $e = [char]0x1b)
   $request = $context.Request
   Write-Host "$e[1;32m ------- Request : $($request.HttpMethod) $($request.RawUrl) $e[0m"
-  if ($request.RawUrl -eq '/' -and $request.HttpMethod -eq 'POST') {
+  if ($request.RawUrl -ceq '/' -and $request.HttpMethod -ceq 'POST') {
     try {
       $rawParams = [IO.StreamReader]::New($request.InputStream, $request.ContentEncoding).ReadToEnd()
       $file = get_param 'file' $rawParams
       $patches = get_param 'patches' $rawParams
       $patches = $patches -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '(?m)^ ?\n','' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
-      $invalid = $patches -split "`n" -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' -join "`n"
+      $invalid = $patches.Trim() -split "`n" -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' -join "`n"
       if ($invalid) { $result = "Invalid patches: $invalid" }
       else { patch_file $file $patches }
     } catch { $result = $_ }
     Write-Host "File : $file`nPatches : $patches`nResult: $result"
     $msg = $result -replace '^$','OK'
   }
-  if ($request.RawUrl -eq '/') { response_ok $html.Replace('$1', $msg) $context.Response }
-  if ($request.RawUrl -eq '/end') { response_ok Kthxbye $context.Response ; return $true }
+  if ($request.RawUrl -ceq '/') { response_ok $html.Replace('$1', $msg) $context.Response }
+  if ($request.RawUrl -ceq '/end') { response_ok Kthxbye $context.Response ; return $true }
 }
 main
