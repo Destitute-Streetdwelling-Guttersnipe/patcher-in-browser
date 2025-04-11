@@ -1,7 +1,8 @@
 # patcher-in-browser
 This is for the CLIphobia who wanna patch but don't wanna touch the command prompt.
 
-![screenshot](https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser/assets/90743025/1c228cef-90b1-4315-bff5-6fa026cfb7df)
+![patcher-in-browser](https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser/assets/90743025/1c228cef-90b1-4315-bff5-6fa026cfb7df)
+![powerbashell](./doc/powerbashell--small.png)
 
 ## Patches format
 
@@ -30,6 +31,8 @@ Patches are written to URL hash when the patches input lose focus.
 
 Patches in URL can be shared easier than uploading a patch file somewhere.
 
+![patcher-in-browser](./doc/patcher-in-browser.png)
+
 ## Compare file to generate patches
 
 Expand the section "Compare file (Diff hex bytes)" to generate patches for the differences between 2 files.
@@ -55,6 +58,8 @@ The user interface is a web app at `http://localhost:8088/`
 
 Patches can be shared via URL, such as `http://localhost:8088/#{"name":"Boaty-McBoatface","file":"/path/to/file","patches":["DEADBEEF~0F~F1~CE","CAFEBABE~FE~ED~FA~CE"]}`
 
+![powerbashell](./doc/powerbashell.png)
+
 ## Extraneous Extra: another polyglot patcher for the CLI fanatics
 
 `bash-power-patcher.ps1` is a patcher which can be run in bash and PowerShell.
@@ -62,3 +67,5 @@ Using interactive TUI, it waits for user to type in target file and patches.
 It can also read user input sent via a shell pipe.
 
 Obviously, its source code is much simpler than `powerbashell.ps1`. The LOC count is less than half the web-based patcher with the same feature set.
+
+![bash-power-patcher](./doc/bash-power-patcher.png)
