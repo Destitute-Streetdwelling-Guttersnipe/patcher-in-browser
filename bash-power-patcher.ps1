@@ -8,13 +8,12 @@ set -eo pipefail
 main() {
   echo -e "\e[1;42m bash-power-patcher can patch anything anywhere anytime anyhow anyway \e[0m"
   echo -ne "\e[1;32m ?? What do ya wanna patch ?? \e[0m" && read -r file
-  echo -e "$(show_examples)"
   while : ;do
     echo -ne "\e[1;32m !! Gimme yo patch !! \e[0m" && read -r line
     [[ ! $line ]] && break
     patch=$(<<<"$line" sed -E 's/ *#.*//g; s/ *([: =]) */\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
     if <<<"$patch" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' >/dev/null
-    then echo -e "\e[1;31m Invalid patch: $patch \e[0m" ; continue ;fi
+    then echo -e "\e[1;31m Invalid patch: $patch \e[0m" ; echo -e "$(show_examples)" ; continue ;fi
     error=$(patch_file "$file" "$patch" 2>&1 || :)
     echo -e "${error:+\e[1;31m }${error:-\e[1;32m OK} \e[0m"
   done
@@ -43,13 +42,12 @@ exit ### NOTE: the end of bash script
 function main() { param($e = [char]0x1b)
   echo "$e[1;42m bash-power-patcher can patch anything anywhere anytime anyhow anyway $e[0m"
   $file = Read-Host -Prompt "$e[1;32m ?? What do ya wanna patch ?? $e[0m"
-  show_examples
   while ($true) {
     $line = Read-Host -Prompt "$e[1;32m !! Gimme yo patch !! $e[0m"
     if (!$line) { break }
     $patch = $line -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
     $invalid = $patch -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$'
-    if ($invalid) { echo "$e[1;31m Invalid patch: $patch $e[0m" ; continue }
+    if ($invalid) { echo "$e[1;31m Invalid patch: $patch $e[0m" ; show_examples ; continue }
     try { patch_file $file $patch } catch { $error = $_ }
     if ($error) { echo "$e[1;31m $error $e[0m" } else { echo "$e[1;32m OK $e[0m" }
   }
