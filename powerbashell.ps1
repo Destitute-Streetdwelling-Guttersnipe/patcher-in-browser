@@ -127,7 +127,7 @@ function patch_file() { param($file, $patches)
       $search, $changes = $_.Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
       $offset = $text.IndexOf($search)
     } else {
-      $offset, $data = $_.Replace(':', ' ').Split(' ') | %{ [int]"0x$_" }
+      $offset, $data = $_ -split ':| ' | %{ [int]"0x$_" }
       $search = $changes = -join [char[]]$data
     }
     if ($offset -ge 0) { $text = $text.Remove($offset, $search.Length).Insert($offset, $changes) }

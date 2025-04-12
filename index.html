@@ -53,7 +53,7 @@
         }
         async function patchAndSave() {
             $e('name').focus() // focus on something to prevent stutter when textarea contains too many text
-            const patches = $e('patches').value.trim().split(/\s*\n\s*/).filter(line => !line.startsWith('#')) // exclude comment lines
+            const patches = $e('patches').value.trim().replace(/ *#.*/g,'').replace(/ *([: =]) */g,'$1').replace(/^ ?\n/gm,'').replace(/\b0x([0-9a-f])/gi,'$1').split(/ ?\n ?/) // remove comments, repeated spaces, and prefix 0x or \x
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
             var [error, patched] = await applyPatch(bytes, patches)
             if (error) alert(error)
@@ -63,14 +63,13 @@
             if (!patched) return ['no file selected']
             for (var i = start; i < start + step && i < patches.length; i++) {
                 var line = patches[i]
+                if (!line.match(/^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$/i)) return ['wrong format: ' + line]
                 if (line.includes('=')) { // search for bytes and patch (aa bb = cc dd ee ff)
-                    if (!line.match(/^((0x)?[0-9a-f]{2}\b\s*)+=(\s*(0x)?[0-9a-f]{2}\b)+$/i)) return ['wrong format: ' + line]
-                    var [search, patch] = line.split(/\s*=\s*/).map(half => half.split(/\s+/).map(i => parseInt(i, 16)))
+                    var [search, patch] = line.split(/=/).map(half => half.split(/ /).map(i => parseInt(i, 16)))
                     var offset = findIndexOfSubArray(search, patched)
                     if (offset < 0) return ['bytes not found: ' + line]
                 } else { // patch at offset (aabbcc : dd ee ff)
-                    if (!line.match(/^(0x)?[0-9a-f]+\b\s*:?(\s*(0x)?[0-9a-f]{2}\b)+$/i)) return ['wrong format: ' + line]
-                    var [offset, ...patch] = line.split(/\s*[: ]\s*/).map(i => parseInt(i, 16))
+                    var [offset, ...patch] = line.split(/:| /).map(i => parseInt(i, 16))
                 }
                 if (offset + patch.length > patched.length) return ['offset too big: ' + line]
                 patched.set(patch, offset)
