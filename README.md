@@ -14,13 +14,13 @@ Example of patching at specified offset with hex bytes:
 
        DEADBEEF  FE E1  DE AF
         ACE0FBA5E:  0xFE ED  C0 DE
-      0xFEDD06F00D :CA FE  0xBA BE
+      0xFEDD06F00D :CA FE  \xBA BE
       DECAFDAD : B0 BA  C0 FF EE
-      # BAEBEE : FE EE  F1 F0
+      # \xBAEBEE : FE EE  F1 F0
 
 Example of searching and replacing with hex bytes:
 
-      # FA CE  B0 0C  =0x0F F1 CE
+      # \xFA CE  B0 0C  =0x0F F1 CE
        0xB0 0B=  D0 0D  0F  DE ED
 
 ## Patches in URL

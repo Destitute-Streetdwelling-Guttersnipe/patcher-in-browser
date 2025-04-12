@@ -25,7 +25,7 @@ on_request() {
   while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
   if [[ $path == "/" && $method == 'POST' ]] ;then
     file=$(get_param file "$query")
-    patches=$(get_param patches "$query" | sed -E 's/ *#.*//g; s/ *([: =]) */\1/g; /^ ?$/d; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
+    patches=$(get_param patches "$query" | sed -E 's/(\b0|\\)x([0-9a-f])/ \2/gi; s/ *#.*//g; s/ *([: =]) */\1/g; /^ ?$/d') # remove comments, repeated spaces, and prefix 0x or \x
     if invalid=$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')
     then result="Invalid patches: $invalid"
     else result=$(<<<"$patches" patch_file "$file" 2>&1 | uniq -u) ;fi
@@ -161,7 +161,7 @@ function on_request() { param($context, $html, $e = [char]0x1b)
       $rawParams = [IO.StreamReader]::New($request.InputStream, $request.ContentEncoding).ReadToEnd()
       $file = get_param 'file' $rawParams
       $patches = get_param 'patches' $rawParams
-      $patches = $patches -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '(?m)^ ?\n','' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
+      $patches = $patches -replace '(\b0|\\)x([0-9a-f])',' $2' -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '(?m)^ ?\n','' # remove comments, repeated spaces, and prefix 0x or \x
       $invalid = $patches.Trim() -split "`n" -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' -join "`n"
       if ($invalid) { $result = "Invalid patches: $invalid" }
       else { patch_file $file $patches }

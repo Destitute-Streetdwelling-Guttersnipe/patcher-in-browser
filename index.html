@@ -20,10 +20,10 @@
     <textarea id="patches" rows=8 wrap="off" onchange="putPatchesIntoUrl()">
        DEADBEEF  FE E1  DE AF
         ACE0FBA5E:  0xFE ED  C0 DE
-      0xFEDD06F00D :CA FE  0xBA BE
+      0xFEDD06F00D :CA FE  \xBA BE
       DECAFDAD : B0 BA  C0 FF EE
-      # BAEBEE : FE EE  F1 F0
-      # FA CE  B0 0C  =0x0F F1 CE
+      # \xBAEBEE : FE EE  F1 F0
+      # \xFA CE  B0 0C  =0x0F F1 CE
        0xB0 0B=  D0 0D  0F  DE ED
     </textarea>
     <label for="fileInput">Original file</label>
@@ -53,7 +53,7 @@
         }
         async function patchAndSave() {
             $e('name').focus() // focus on something to prevent stutter when textarea contains too many text
-            const patches = $e('patches').value.trim().replace(/ *#.*/g,'').replace(/ *([: =]) */g,'$1').replace(/^ ?\n/gm,'').replace(/\b0x([0-9a-f])/gi,'$1').split(/ ?\n ?/) // remove comments, repeated spaces, and prefix 0x or \x
+            const patches = $e('patches').value.trim().replace(/(\b0|\\)x([0-9a-f])/gi,' $2').replace(/ *#.*/g,'').replace(/ *([: =]) */g,'$1').replace(/^ ?\n/gm,'').split(/ ?\n ?/) // remove comments, repeated spaces, and prefix 0x or \x
             const [bytes, filename] = await readFile('fileInput') // bytes was read from fileInput
             var [error, patched] = await applyPatch(bytes, patches)
             if (error) alert(error)

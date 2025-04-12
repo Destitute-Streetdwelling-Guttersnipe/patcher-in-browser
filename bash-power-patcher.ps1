@@ -11,9 +11,9 @@ main() {
   while : ;do
     echo -ne "\e[1;32m !! Gimme yo patch !! \e[0m" && read -r line
     [[ ! $line ]] && break
-    patch=$(<<<"$line" sed -E 's/ *#.*//g; s/ *([: =]) */\1/g; s/\b0x([0-9a-f])/\1/gi') # remove comments, repeated spaces, and prefix 0x
+    patch=$(<<<"$line" sed -E 's/(\b0|\\)x([0-9a-f])/ \2/gi; s/ *#.*//g; s/ *([: =]) */\1/g') # remove comments, repeated spaces, and prefix 0x or \x
     if <<<"$patch" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' >/dev/null
-    then echo -e "\e[1;31m Invalid patch: $patch\n$(show_examples)" ; continue ;fi
+    then echo -e "\e[1;31m Invalid patch: $patch"; show_examples ; continue ;fi
     error=$(patch_file "$file" "$patch" 2>&1 || :)
     echo -e "${error:+\e[1;31m }${error:-\e[1;32m OK}"
   done
@@ -25,14 +25,14 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
 patch_file() { if [[ $2 =~ '=' ]] ;then sed "s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi }
 show_examples() {
+echo -e "\e[1;32m Lemme show ya how patches look like \e[0m"
 cat <<EXAMPLES
-\e[1;32m Lemme show ya how patches look like \e[0m
        DEADBEEF  FE E1  DE AF
         ACE0FBA5E:  0xFE ED  C0 DE
-      0xFEDD06F00D :CA FE  0xBA BE
+      0xFEDD06F00D :CA FE  \xBA BE
       DECAFDAD : B0 BA  C0 FF EE
-      # BAEBEE : FE EE  F1 F0
-      # FA CE  B0 0C  =0x0F F1 CE
+      # \xBAEBEE : FE EE  F1 F0
+      # \xFA CE  B0 0C  =0x0F F1 CE
        0xB0 0B=  D0 0D  0F  DE ED
 EXAMPLES
 }
@@ -45,7 +45,7 @@ function main() { param($e = [char]0x1b)
   while ($true) {
     $line = Read-Host -Prompt "$e[1;32m !! Gimme yo patch !! $e[0m"
     if (!$line) { break }
-    $patch = $line -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '\b0x([0-9a-f])','$1' # remove comments, repeated spaces, and prefix 0x
+    $patch = $line -replace '(\b0|\\)x([0-9a-f])',' $2' -replace ' *#.*','' -replace ' *([: =]) *','$1' # remove comments, repeated spaces, and prefix 0x or \x
     $invalid = $patch -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$'
     if ($invalid) { echo "$e[1;31m Invalid patch: $patch" ; show_examples ; continue }
     try { patch_file $file $patch } catch { $error = $_ }
@@ -54,7 +54,8 @@ function main() { param($e = [char]0x1b)
 }
 function show_examples() { param($e = [char]0x1b)
   $lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
-  echo ([Regex]::Match($lines,"(?s)EXAMPLES.(.+?).EXAMPLES").Groups[1].Value.Replace('\e', $e))
+  echo ([Regex]::Match($lines,'"(.+?)"\n.+?EXAMPLES').Groups[1].Value.Replace('\e', $e)) # extract quoted string in the line before EXAMPLES
+  echo ([Regex]::Match($lines,"(?s)EXAMPLES.(.+?).EXAMPLES").Groups[1].Value) # extract lines between EXAMPLES
 }
 function patch_file() { param($file, $patch)
   $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
