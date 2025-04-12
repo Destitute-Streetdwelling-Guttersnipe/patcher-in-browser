@@ -22,6 +22,7 @@ start_server() {
 on_request() {
   read -r method path protocol
   echo -e "\e[1;32m ------ Request : $method $path $protocol \e[0m" >&2
+  html=$(make_html)
   while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
   if [[ $path == "/" && $method == 'POST' ]] ;then
     file=$(get_param file "$query")
@@ -32,7 +33,7 @@ on_request() {
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
   fi
-  [[ $path == "/"    ]] && response_ok "$(make_html "$msg")" || :
+  [[ $path == "/"    ]] && response_ok "${html/\$msg/$msg}" || :
   [[ $path == "/end" ]] && response_ok Kthxbye || :
   [[ $path == "/end" ]] && { [[ $SOCAT_PPID ]] && kill "$SOCAT_PPID" || exit 1 ;} || :
 }
@@ -46,12 +47,12 @@ patch_file() {
     if [[ $line =~ '=' ]] ;then sed "s=$(hex $line)=" -i "$1" ;else <<<"$line" xxd -r -c256 - "$1" ;fi
   done
 }
-response_ok() { echo -ne "HTTP/1.1 200 OK\r\n\r\n$1" ;}
-response_ok() ( LANG=C; echo -ne "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: ${#1}\r\n\r\n$1\r\n" ) # need LANG=C to set the correct content length in bytes
+response_ok() { printf "HTTP/1.1 200 OK\r\n\r\n%s" "$1" ;}
+response_ok() ( LANG=C; printf "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: %s\r\n\r\n%s\r\n" ${#1} "$1" ) # need LANG=C to set the correct content length in bytes
 # get value of query parameter, convert line-endings to Unix style, decode URL parameters
 get_param() { printf %b "$(<<<"$2" grep -oP "(?<=$1=)[^&]+" | sed -E 's/\+/ /g; s/%0D%0A/\n/gi; s/%([0-9a-f]{2})/\\x\1/gi')" ;}
 make_html() {
-cat <<END-OF-HTML
+cat <<'END-OF-HTML'
 <!DOCTYPE html>
 <html>
 <head>
@@ -73,10 +74,10 @@ cat <<END-OF-HTML
     <textarea id="patches" name="patches" rows=8 wrap="off" onchange="putPatchesIntoUrl()">
        DEADBEEF  FE E1  DE AF
         ACE0FBA5E:  0xFE ED  C0 DE
-      0xFEDD06F00D :CA FE  0xBA BE
+      0xFEDD06F00D :CA FE  \xBA BE
       DECAFDAD : B0 BA  C0 FF EE
-      # BAEBEE : FE EE  F1 F0
-      # FA CE  B0 0C  =0x0F F1 CE
+      # \xBAEBEE : FE EE  F1 F0
+      # \xFA CE  B0 0C  =0x0F F1 CE
        0xB0 0B=  D0 0D  0F  DE ED
     </textarea>
     <label for="file">Target file</label>
@@ -84,7 +85,7 @@ cat <<END-OF-HTML
     <input type="submit" value="【  Patch it  】" title="〖 »» ›› >> ＞＞ click me ＜＜ << ‹‹ «« 〗"/>
   </form>
   <label for="result">Aftermath</label>
-  <textarea id="result" rows=4 readonly>$1</textarea>
+  <textarea id="result" rows=4 readonly>$msg</textarea>
   <a href="/end" title="᚛ᚑᚌᚐᚋ᚜ cease and desist ᚛ᚑᚌᚐᚋ᚜">⟦ » » › › _ Exit _ ‹ ‹ « « ⟧</a>
   <script type="text/javascript">
         var el = (id) => document.getElementById(id)
@@ -92,13 +93,13 @@ cat <<END-OF-HTML
             const name = el('name').innerText.trim()
             const file = el('file').value.trim()
             const patches = el('patches').value.trim()
-            location.hash = '#' + JSON.stringify({name: name, file: file, patches: patches.replaceAll(' ', '~').split('\\\\n')})
+            location.hash = '#' + JSON.stringify({name: name, file: file, patches: patches.replaceAll(' ', '~').split('\n')})
         }
         try { // example: #{"name":"Boaty-McBoatface","file":"/path/to/file","patches":["DEADBEEF~0F~F1~CE","CAFEBABE~FE~ED~FA~CE"]}
             var params = JSON.parse(decodeURI(location.hash.slice(1)))
             el('name').innerText = params.name
             el('file').value = params.file
-            el('patches').value = params.patches.join('\\\\n').replaceAll('~', ' ')
+            el('patches').value = params.patches.join('\n').replaceAll('~', ' ')
         } catch(ex) { console.warn('Error: cannot parse parameters from URL hash', ex) }
   </script>
 </body>
@@ -147,7 +148,7 @@ function start_server() { param($port, $e = [char]0x1b)
 }
 function main() {
   $lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
-  $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value.Replace('\\\\','\')
+  $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
   $port = [Regex]::Match($lines,"port=(.+)").Groups[1].Value
   $listener = start_server $port
   while ($listener.IsListening -and !(on_request $listener.GetContext() $html)) {}
@@ -169,7 +170,7 @@ function on_request() { param($context, $html, $e = [char]0x1b)
     Write-Host "File : $file`nPatches : $patches`nResult: $result"
     $msg = $result -replace '^$','OK'
   }
-  if ($request.RawUrl -ceq '/') { response_ok $html.Replace('$1', $msg) $context.Response }
+  if ($request.RawUrl -ceq '/') { response_ok $html.Replace('$msg', $msg) $context.Response }
   if ($request.RawUrl -ceq '/end') { response_ok Kthxbye $context.Response ; return $true }
 }
 main
