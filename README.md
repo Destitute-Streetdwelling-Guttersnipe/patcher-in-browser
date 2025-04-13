@@ -1,5 +1,12 @@
 # patcher-in-browser
-This is for the CLIphobia who wanna patch but don't wanna touch the command prompt.
+
+A bunch of patchers in various shapes:
+
+- `patcher-in-browser` is a web-based patcher. This is for the CLIphobia who wanna patch but don't wanna touch the command prompt.
+- `powerbashell` is a hybrid-app patcher. This is a polyglot shell script with a web-based user interface.
+- `bash-power-patcher` is another polyglot shell script. This is for the CLI fanatics who love the text user interface.
+
+The patches can be shared via URLs or shell commands.
 
 ![patcher-in-browser](https://github.com/Destitute-Streetdwelling-Guttersnipe/patcher-in-browser/assets/90743025/1c228cef-90b1-4315-bff5-6fa026cfb7df)
 ![powerbashell](./doc/powerbashell--small.png)
@@ -67,5 +74,7 @@ Using interactive TUI, it waits for user to type in target file and patches.
 It can also read user input sent via a shell pipe.
 
 Obviously, its source code is much simpler than `powerbashell.ps1`. The LOC count is less than half the web-based patcher with the same feature set.
+
+Patches can be shared as shell commands, such as `printf "/path/to/file \n DEADBEEF:0F F1 CE \n CA=FE" | bash-power-patcher.ps1`
 
 ![bash-power-patcher](./doc/bash-power-patcher.png)
