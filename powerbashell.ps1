@@ -97,10 +97,12 @@ cat <<'END-OF-HTML'
         }
         try { // example: #{"name":"Boaty-McBoatface","file":"/path/to/file","patches":["DEADBEEF~0F~F1~CE","CAFEBABE~FE~ED~FA~CE"]}
             var params = JSON.parse(decodeURI(location.hash.slice(1)))
-            el('name').innerText = params.name
-            el('file').value = params.file
-            el('patches').value = params.patches.join('\n').replaceAll('~', ' ')
-        } catch(ex) { console.warn('Error: cannot parse parameters from URL hash', ex) }
+            if (params.patches && (el('result').value || confirm('Load patches from URL?\n(Patches may contain illegal or offensive text)'))) {
+                el('name').innerText = params.name
+                el('file').value = params.file
+                el('patches').value = params.patches.join('\n').replaceAll('~', ' ')
+            }
+        } catch(ex) { console.warn('Cannot parse parameters from URL hash: ', ex) }
   </script>
 </body>
 </html>

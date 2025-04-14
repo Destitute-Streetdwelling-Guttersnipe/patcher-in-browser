@@ -134,15 +134,12 @@
         }());
         try {
             // example: #{"name":"Boaty-McBoatface","patches":["DEADBEEF~0F~F1~CE","CAFEBABE~FE~ED~FA~CE"]}
-            var paramStr = decodeURI(location.hash.slice(1))
-            if (paramStr && paramStr[0]==='{') {
-                var params = JSON.parse(paramStr)
+            var params = JSON.parse(decodeURI(location.hash.slice(1)))
+            if (params.patches && confirm('Load patches from URL?\n(Patches may contain illegal or offensive text)')) {
                 $e('name').innerText = params.name
                 $e('patches').value = params.patches.join('\n').replaceAll('~', ' ')
             }
-        } catch(ex) {
-            console.warn('Error: cannot parse parameters from URL hash', ex)
-        }
+        } catch(ex) { console.warn('Cannot parse parameters from URL hash: ', ex) }
     </script>
 </body>
 </html>
