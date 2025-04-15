@@ -29,11 +29,12 @@ on_request() {
     patches=$(get_param patches "$query" | sed -E 's/(\b0|\\)x([0-9a-f])/ \2/gi; s/ *#.*//g; s/ *([: =]) */\1/g; /^ ?$/d') # remove comments, repeated spaces, and prefix 0x or \x
     if invalid=$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')
     then result="Invalid patches: $invalid"
+    elif [ ! -f "$file" ]; then result="File not found: $file"
     else result=$(<<<"$patches" patch_file "$file" 2>&1 | uniq -u) ;fi
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
   fi
-  [[ $path == "/"    ]] && response_ok "${html/\$msg/$msg}" || :
+  [[ $path == "/"    ]] && response_ok "${html/\$msg/${msg//</&lt}}" || :
   [[ $path == "/end" ]] && response_ok Kthxbye || :
   [[ $path == "/end" ]] && { [[ $SOCAT_PPID ]] && kill "$SOCAT_PPID" || exit 1 ;} || :
 }
@@ -167,10 +168,11 @@ function on_request() { param($context, $html, $e = [char]0x1b)
       $patches = $patches -replace '(\b0|\\)x([0-9a-f])',' $2' -replace ' *#.*','' -replace ' *([: =]) *','$1' -replace '(?m)^ ?\n','' # remove comments, repeated spaces, and prefix 0x or \x
       $invalid = $patches.Trim() -split "`n" -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' -join "`n"
       if ($invalid) { $result = "Invalid patches: $invalid" }
+      elseif (![IO.File]::Exists($file)) { throw "File not found: $file" }
       else { patch_file $file $patches }
     } catch { $result = $_ }
     Write-Host "File : $file`nPatches : $patches`nResult: $result"
-    $msg = $result -replace '^$','OK'
+    $msg = $result -replace '^$','OK' -replace '<','&lt'
   }
   if ($request.RawUrl -ceq '/') { response_ok $html.Replace('$msg', $msg) $context.Response }
   if ($request.RawUrl -ceq '/end') { response_ok Kthxbye $context.Response ; return $true }

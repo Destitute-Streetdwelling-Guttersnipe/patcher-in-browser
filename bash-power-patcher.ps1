@@ -8,6 +8,7 @@ set -eo pipefail
 main() {
   echo -e "\e[1;42m bash-power-patcher can patch anything anywhere anytime anyhow anyway \e[0m"
   echo -ne "\e[1;32m ?? What do ya wanna patch ?? \e[0m" && read -r file
+  [ ! -f "$file" ] && echo -e "\e[1;31m File not found: $file \e[0m" && exit || :
   while : ;do
     echo -ne "\e[1;32m !! Gimme yo patch !! \e[0m" && read -r line
     [[ ! $line ]] && break
@@ -42,6 +43,7 @@ exit ### NOTE: the end of bash script
 function main() { param($e = [char]0x1b)
   echo "$e[1;42m bash-power-patcher can patch anything anywhere anytime anyhow anyway $e[0m"
   $file = Read-Host -Prompt "$e[1;32m ?? What do ya wanna patch ?? $e[0m"
+  if (![IO.File]::Exists($file)) { echo "$e[1;31m File not found: $file $e[0m" ; return }
   while ($true) {
     $line = Read-Host -Prompt "$e[1;32m !! Gimme yo patch !! $e[0m"
     if (!$line) { break }
