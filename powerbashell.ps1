@@ -43,7 +43,7 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
 )
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
 patch_file() {
-  if [[ $2 =~ = ]] ;then sed "s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi
+  if [[ $2 =~ = ]] ;then LANG=C sed ':0;$!{N;b0};'"s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi
 }
 response_ok() { printf "HTTP/1.1 200 OK\r\n\r\n%s" "$1" ;}
 response_ok() ( LANG=C; printf "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: %s\r\n\r\n%s\r\n" ${#1} "$1" ) # need LANG=C to set the correct content length in bytes

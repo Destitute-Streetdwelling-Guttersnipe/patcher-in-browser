@@ -22,7 +22,7 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
   while IFS=': ' read o hex ;do printf \\x${hex// /\\x} | patchdd "${!#}" 0x$o ;done
 )
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
-patch_file() { if [[ $2 =~ = ]] ;then sed "s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi }
+patch_file() { if [[ $2 =~ = ]] ;then LANG=C sed ':0;$!{N;b0};'"s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi }
 show_examples() {
   echo -e "\e[1;32m Lemme show ya how patches look like \e[0m"
   cat <<EXAMPLES
