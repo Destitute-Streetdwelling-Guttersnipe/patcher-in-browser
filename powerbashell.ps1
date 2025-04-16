@@ -16,7 +16,7 @@ start_server() {
     trap 'rm "$out"' EXIT ERR
     while nc -l -p $1 <"$out" | on_request >"$out" ;do : ;done
   elif hash socat ;then
-    socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'$0' request"
+    socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'$0' request || kill \$SOCAT_PPID"
   fi
 }
 on_request() {
@@ -30,13 +30,12 @@ on_request() {
     if invalid=$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')
     then result="Invalid patches: $invalid"
     elif [ ! -f "$file" ]; then result="File not found: $file"
-    else result=$(<<<"$patches" patch_file "$file" 2>&1 | uniq -u) ;fi
+    else result=$(<<<"$patches" patch_file "$file" 2>&1 | uniq) ;fi
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
   fi
   [[ $path = /    ]] && response_ok "${html/\$msg/${msg//</&lt}}" || :
-  [[ $path = /end ]] && response_ok Kthxbye || :
-  [[ $path = /end ]] && { [[ $SOCAT_PPID ]] && kill "$SOCAT_PPID" || exit 1 ;} || :
+  [[ $path = /end ]] && response_ok Kthxbye && exit 2 || :
 }
 hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa bb c d | xxd -r - filename`
   patchdd() { dd seek=$(($2)) of="$1" bs=1 conv=notrunc status=none ;}
