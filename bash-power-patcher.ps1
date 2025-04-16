@@ -9,14 +9,12 @@ main() {
   echo -e "\e[1;42m bash-power-patcher can patch anything anywhere anytime anyhow anyway \e[0m"
   echo -ne "\e[1;32m ?? What do ya wanna patch ?? \e[0m" && read -r file
   [ ! -f "$file" ] && echo -e "\e[1;31m File not found: $file \e[0m" && exit || :
-  while : ;do
-    echo -ne "\e[1;32m !! Gimme yo patch !! \e[0m" && read -r line
-    [[ ! $line ]] && break
+  while echo -ne "\e[1;32m !! Gimme yo patch !! \e[0m" && read -r line && [[ $line ]] ;do
     patch=$(<<<"$line" sed -E 's/(\b0|\\)x([0-9a-f])/ \2/gi; s/ *#.*//g; s/ *([: =]) */\1/g') # remove comments, repeated spaces, and prefix 0x or \x
     if <<<"$patch" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' >/dev/null
     then echo -e "\e[1;31m Invalid patch: $patch"; show_examples ; continue ;fi
     error=$(patch_file "$file" "$patch" 2>&1 || :)
-    echo -e "${error:+\e[1;31m }${error:-\e[1;32m OK}"
+    echo -e "${error:+\e[1;31m }${error:-\e[1;32m OK}" # show OK in green or show $error in red
   done
 }
 hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa bb c d | xxd -r - filename`
@@ -24,7 +22,7 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
   while IFS=': ' read o hex ;do printf \\x${hex// /\\x} | patchdd "${!#}" 0x$o ;done
 )
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
-patch_file() { if [[ $2 =~ '=' ]] ;then sed "s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi }
+patch_file() { if [[ $2 =~ = ]] ;then sed "s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi }
 show_examples() {
 echo -e "\e[1;32m Lemme show ya how patches look like \e[0m"
 cat <<EXAMPLES
@@ -44,9 +42,7 @@ function main() { param($e = [char]0x1b)
   echo "$e[1;42m bash-power-patcher can patch anything anywhere anytime anyhow anyway $e[0m"
   $file = Read-Host -Prompt "$e[1;32m ?? What do ya wanna patch ?? $e[0m"
   if (![IO.File]::Exists($file)) { echo "$e[1;31m File not found: $file $e[0m" ; return }
-  while ($true) {
-    $line = Read-Host -Prompt "$e[1;32m !! Gimme yo patch !! $e[0m"
-    if (!$line) { break }
+  while ($line = Read-Host -Prompt "$e[1;32m !! Gimme yo patch !! $e[0m") {
     $patch = $line -replace '(\b0|\\)x([0-9a-f])',' $2' -replace ' *#.*','' -replace ' *([: =]) *','$1' # remove comments, repeated spaces, and prefix 0x or \x
     $invalid = $patch -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$'
     if ($invalid) { echo "$e[1;31m Invalid patch: $patch" ; show_examples ; continue }

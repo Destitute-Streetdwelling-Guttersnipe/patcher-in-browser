@@ -6,17 +6,17 @@ echo `# <#` >/dev/null # avoid using #＞ directly, use #""> or something simila
 set -eo pipefail
 port=8088
 
-main() { [[ $1 == 'request' ]] && on_request || start_server $port ;}
+main() { [[ $1 = request ]] && on_request || start_server $port ;}
 start_server() {
   hash nc || hash socat || { echo -e "\e[1;31m netcat or socat is not installed \e[0m" ; exit 1 ;}
   echo -e "\e[1;42m Listening at http://localhost:$1 \e[0m"
   read -rsn1 -t0.6 key || { open http://localhost:$1 & } # open browser if no key was pressed within 0.6 second
   if hash nc ;then
-    mkfifo ${out="${TMPDIR:-/tmp/}.${BASH_SOURCE[0]##*/}-$RANDOM$RANDOM"}
+    mkfifo ${out="${TMPDIR:-/tmp/}.${0##*/}-$RANDOM$RANDOM"}
     trap 'rm "$out"' EXIT ERR
     while nc -l -p $1 <"$out" | on_request >"$out" ;do : ;done
   elif hash socat ;then
-    socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'${BASH_SOURCE[0]}' request"
+    socat TCP-LISTEN:$1,reuseaddr,fork SYSTEM:"'$0' request"
   fi
 }
 on_request() {
@@ -24,7 +24,7 @@ on_request() {
   echo -e "\e[1;32m ------ Request : $method $path $protocol \e[0m" >&2
   html=$(make_html)
   while read -r -t1 query ;do : ;done # URL query is at the last line which has no EOL character
-  if [[ $path == "/" && $method == 'POST' ]] ;then
+  if [[ $path = / && $method = POST ]] ;then
     file=$(get_param file "$query")
     patches=$(get_param patches "$query" | sed -E 's/(\b0|\\)x([0-9a-f])/ \2/gi; s/ *#.*//g; s/ *([: =]) */\1/g; /^ ?$/d') # remove comments, repeated spaces, and prefix 0x or \x
     if invalid=$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')
@@ -34,9 +34,9 @@ on_request() {
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
   fi
-  [[ $path == "/"    ]] && response_ok "${html/\$msg/${msg//</&lt}}" || :
-  [[ $path == "/end" ]] && response_ok Kthxbye || :
-  [[ $path == "/end" ]] && { [[ $SOCAT_PPID ]] && kill "$SOCAT_PPID" || exit 1 ;} || :
+  [[ $path = /    ]] && response_ok "${html/\$msg/${msg//</&lt}}" || :
+  [[ $path = /end ]] && response_ok Kthxbye || :
+  [[ $path = /end ]] && { [[ $SOCAT_PPID ]] && kill "$SOCAT_PPID" || exit 1 ;} || :
 }
 hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa bb c d | xxd -r - filename`
   patchdd() { dd seek=$(($2)) of="$1" bs=1 conv=notrunc status=none ;}
@@ -45,7 +45,7 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
 patch_file() {
   while read -r line ;do # replace with sed or patch with xxd
-    if [[ $line =~ '=' ]] ;then sed "s=$(hex $line)=" -i "$1" ;else <<<"$line" xxd -r -c256 - "$1" ;fi
+    if [[ $line =~ = ]] ;then sed "s=$(hex $line)=" -i "$1" ;else <<<"$line" xxd -r -c256 - "$1" ;fi
   done
 }
 response_ok() { printf "HTTP/1.1 200 OK\r\n\r\n%s" "$1" ;}
