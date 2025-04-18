@@ -127,16 +127,17 @@ function response_ok() { param($html, $response)
   $response.OutputStream.Close()
 }
 function patch_file() { param($file, $patches)
-  $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
-    if ($_ -match '=') {
-      $search, $changes = $_.Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
-      $offset = $text.IndexOf($search)
-    } else {
-      $offset, $data = $_ -split ':| ' | %{ [int]"0x$_" }
-      $changes = -join [char[]]$data
-    }
-    if ($offset -ge 0) { $text = $text.Remove($offset, $changes.Length).Insert($offset, $changes) }
-  [IO.File]::WriteAllText($file, $text, [Text.Encoding]::GetEncoding(1256))
+  if ($patch -match '=') {
+    $search, $changes = $patch.Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
+    $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
+    if (($offset = $text.IndexOf($search)) -lt 0) { throw "cannot find: $search" }
+    $changes = [Text.Encoding]::GetEncoding(1256).GetBytes($changes)
+  } else {
+    $offset, $changes = $patch -split ':| ' | %{ [int]"0x$_" }
+  }
+  $stream = [IO.File]::OpenWrite($file)
+  $stream.Seek($offset, [IO.SeekOrigin]::Begin) | Out-Null
+  $stream.Write([byte[]]$changes, 0, $changes.Length) ; $stream.Close()
 }
 function start_server() { param($port, $e = [char]0x1b)
   $listener = [System.Net.HttpListener]::New()
