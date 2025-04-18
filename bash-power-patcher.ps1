@@ -22,7 +22,10 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
   while IFS=': ' read o hex ;do printf \\x${hex// /\\x} | patchdd "${!#}" 0x$o ;done
 )
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
-patch_file() { if [[ $2 =~ = ]] ;then LANG=C sed ':0;$!{N;b0};'"s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi }
+patch_file() { # find matched bytes and overwrite with patch bytes
+  if [[ $2 =~ = ]] ;then o=$(LANG=C sed ':0;$!{N;b0};'"s=$(hex $2)=" "$1" | cmp -l "$1" | head -1 | cut -d' ' -f1-2); b=${o:+$(printf %x $((o-1))):${2##*=}} ;fi
+  <<<"${b:-$2}" xxd -r -c256 - "$1"
+}
 show_examples() {
   echo -e "\e[1;32m Lemme show ya how patches look like \e[0m"
   cat <<EXAMPLES
@@ -62,9 +65,9 @@ function patch_file() { param($file, $patch)
     $offset = $text.IndexOf($search)
   } else {
     $offset, $data = $patch -split ':| ' | %{ [int]"0x$_" }
-    $search = $changes = -join [char[]]$data
+    $changes = -join [char[]]$data
   }
-  if ($offset -ge 0) { $text = $text.Remove($offset, $search.Length).Insert($offset, $changes) }
+  if ($offset -ge 0) { $text = $text.Remove($offset, $changes.Length).Insert($offset, $changes) } # overwrite bytes with $changes
   [IO.File]::WriteAllText($file, $text, [Text.Encoding]::GetEncoding(1256))
 }
 main
