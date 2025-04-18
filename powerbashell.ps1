@@ -30,7 +30,7 @@ on_request() {
     if invalid=$(<<<"$patches" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$')
     then result="Invalid patches: $invalid"
     elif [ ! -f "$file" ]; then result="File not found: $file"
-    else result=$(<<<"$patches" patch_file "$file" 2>&1 | uniq) ;fi
+    else result=$(while read line ;do patch_file "$file" "$line" 2>&1 ;done <<<"$patches" | uniq) ;fi
     printf "File : %s\nPatches : %s\nResult : %s\n" "$file" "$patches" "$result" >&2
     msg=${result:-OK}
   fi
@@ -43,9 +43,7 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
 )
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
 patch_file() {
-  while read -r line ;do # replace with sed or patch with xxd
-    if [[ $line =~ = ]] ;then sed "s=$(hex $line)=" -i "$1" ;else <<<"$line" xxd -r -c256 - "$1" ;fi
-  done
+  if [[ $2 =~ = ]] ;then sed "s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi
 }
 response_ok() { printf "HTTP/1.1 200 OK\r\n\r\n%s" "$1" ;}
 response_ok() ( LANG=C; printf "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length: %s\r\n\r\n%s\r\n" ${#1} "$1" ) # need LANG=C to set the correct content length in bytes
@@ -125,7 +123,6 @@ function response_ok() { param($html, $response)
 }
 function patch_file() { param($file, $patches)
   $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
-  $patches.Trim() -split ' ?\n ?' | %{
     if ($_ -match '=') {
       $search, $changes = $_.Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
       $offset = $text.IndexOf($search)
@@ -134,7 +131,6 @@ function patch_file() { param($file, $patches)
       $search = $changes = -join [char[]]$data
     }
     if ($offset -ge 0) { $text = $text.Remove($offset, $search.Length).Insert($offset, $changes) }
-  }
   [IO.File]::WriteAllText($file, $text, [Text.Encoding]::GetEncoding(1256))
 }
 function start_server() { param($port, $e = [char]0x1b)
@@ -168,7 +164,7 @@ function on_request() { param($context, $html, $e = [char]0x1b)
       $invalid = $patches.Trim() -split "`n" -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' -join "`n"
       if ($invalid) { $result = "Invalid patches: $invalid" }
       elseif (![IO.File]::Exists($file)) { throw "File not found: $file" }
-      else { patch_file $file $patches }
+      else { $patches.Trim() -split ' ?\n ?' | %{ patch_file $file $_ } }
     } catch { $result = $_ }
     Write-Host "File : $file`nPatches : $patches`nResult: $result"
     $msg = $result -replace '^$','OK' -replace '<','&lt'

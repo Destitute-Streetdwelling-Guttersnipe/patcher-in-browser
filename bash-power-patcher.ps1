@@ -46,7 +46,7 @@ function main() { param($e = [char]0x1b)
     $patch = $line -replace '(\b0|\\)x([0-9a-f])',' $2' -replace ' *#.*','' -replace ' *([: =]) *','$1' # remove comments, repeated spaces, and prefix 0x or \x
     $invalid = $patch -notmatch '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$'
     if ($invalid) { echo "$e[1;31m Invalid patch: $patch" ; show_examples ; continue }
-    try { patch_file $file $patch } catch { $error = $_ }
+    try { patch_file $file $patch.Trim() } catch { $error = $_ }
     if ($error) { echo "$e[1;31m $error" } else { echo "$e[1;32m OK" }
   }
 }
@@ -58,10 +58,10 @@ function show_examples() { param($e = [char]0x1b)
 function patch_file() { param($file, $patch)
   $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
   if ($patch -match '=') {
-    $search, $changes = $patch.Trim().Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
+    $search, $changes = $patch.Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
     $offset = $text.IndexOf($search)
   } else {
-    $offset, $data = $patch.Trim() -split ':| ' | %{ [int]"0x$_" }
+    $offset, $data = $patch -split ':| ' | %{ [int]"0x$_" }
     $search = $changes = -join [char[]]$data
   }
   if ($offset -ge 0) { $text = $text.Remove($offset, $search.Length).Insert($offset, $changes) }
