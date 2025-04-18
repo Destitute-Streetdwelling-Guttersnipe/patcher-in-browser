@@ -128,12 +128,12 @@ function response_ok() { param($html, $response)
 }
 function patch_file() { param($file, $patches)
   if ($patch -match '=') {
-    $search, $changes = $patch.Split('=') | %{ -join( -split $_ | %{ [char]([byte]"0x$_") } ) }
+    $search  = -join ( $patch.Split('=')[0].Split(' ') | %{ [char][byte]"0x$_" } )
+    $changes = $patch.Split('=')[1].Split(' ') | %{ [byte]"0x$_" }
     $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
-    if (($offset = $text.IndexOf($search)) -lt 0) { throw "cannot find: $search" }
-    $changes = [Text.Encoding]::GetEncoding(1256).GetBytes($changes)
+    if (($offset = $text.IndexOf($search)) -lt 0) { throw "cannot find: $($patch.Split('=')[0])" }
   } else {
-    $offset, $changes = $patch -split ':| ' | %{ [int]"0x$_" }
+    $offset, $changes = $patch -split ':| ' | %{ [int64]"0x$_" }
   }
   $stream = [IO.File]::OpenWrite($file)
   $stream.Seek($offset, [IO.SeekOrigin]::Begin) | Out-Null
