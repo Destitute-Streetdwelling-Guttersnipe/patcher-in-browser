@@ -7,9 +7,9 @@ set -eo pipefail
 
 main() {
   echo -e "\e[1;42m bash-power-patcher can patch anything anywhere anytime anyhow anyway \e[0m"
-  echo -ne "\e[1;32m ?? What do ya wanna patch ?? \e[0m" && read -r file
+  echo -ne "\e[1;32m ?? What do ya wanna patch ?? \e[0m" ; read -r file
   [ ! -f "$file" ] && echo -e "\e[1;31m File not found: $file \e[0m" && exit || :
-  while echo -ne "\e[1;32m !! Gimme yo patch !! \e[0m" && read -r line && [[ $line ]] ;do
+  while echo -ne "\e[1;32m !! Gimme yo patch !! \e[0m" ; read -r line ; [[ $line ]] ;do
     patch=$(<<<"$line" sed -E 's/(\b0|\\)x([0-9a-f])/ \2/gi; s/ *#.*//g; s/ *([: =]) */\1/g') # remove comments, repeated spaces, and prefix 0x or \x
     if <<<"$patch" grep -viP '^( ?[0-9a-f]+[: ]|( ?\b[0-9a-f]{2})+=)(\b[0-9a-f]{2} ?)+$' >/dev/null
     then echo -e "\e[1;31m Invalid patch: $patch"; show_examples ; continue ;fi
@@ -24,8 +24,8 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
 patch_file() { if [[ $2 =~ = ]] ;then sed "s=$(hex $2)=" -i "$1" ;else <<<"$2" xxd -r -c256 - "$1" ;fi }
 show_examples() {
-echo -e "\e[1;32m Lemme show ya how patches look like \e[0m"
-cat <<EXAMPLES
+  echo -e "\e[1;32m Lemme show ya how patches look like \e[0m"
+  cat <<EXAMPLES
        DEADBEEF  FE E1  DE AF
         ACE0FBA5E:  0xFE ED  C0 DE
       0xFEDD06F00D :CA FE  \xBA BE

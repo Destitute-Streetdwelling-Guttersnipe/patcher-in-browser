@@ -52,7 +52,7 @@ response_ok() ( LANG=C; printf "HTTP/1.1 200 OK\r\nContent-Type: text/html; char
 # get value of query parameter, convert line-endings to Unix style, decode URL parameters
 get_param() { printf %b "$(<<<"$2" grep -oP "(?<=$1=)[^&]+" | sed -E 's/\+/ /g; s/%0D%0A/\n/gi; s/%([0-9a-f]{2})/\\x\1/gi')" ;}
 make_html() {
-cat <<'END-OF-HTML'
+cat <<'HTML-TEMPLATE'
 <!DOCTYPE html>
 <html>
 <head>
@@ -106,7 +106,7 @@ cat <<'END-OF-HTML'
   </script>
 </body>
 </html>
-END-OF-HTML
+HTML-TEMPLATE
 }
 main $*
 exit ### NOTE: the end of bash script
@@ -150,7 +150,7 @@ function start_server() { param($port, $e = [char]0x1b)
 }
 function main() {
   $lines = (Get-Content $PSCommandPath -Encoding UTF8 -Raw)
-  $html = [Regex]::Match($lines,"(?sm)END-OF-HTML.(.+?).END-OF-HTML").Groups[1].Value
+  $html = [Regex]::Match($lines,"(?s)HTML-TEMPLATE.(.+?).HTML-TEMPLATE").Groups[1].Value.Trim()
   $port = [Regex]::Match($lines,"port=(.+)").Groups[1].Value
   $listener = start_server $port
   while ($listener.IsListening -and !(on_request $listener.GetContext() $html)) {}
