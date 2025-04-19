@@ -127,11 +127,11 @@ function response_ok() { param($html, $response)
   $response.OutputStream.Close()
 }
 function patch_file() { param($file, $patches)
-  if ($patch -match '=') {
-    $search  = -join ( $patch.Split('=')[0].Split(' ') | %{ [char][byte]"0x$_" } )
-    $changes = $patch.Split('=')[1].Split(' ') | %{ [byte]"0x$_" }
+  if (($i=$patch.IndexOf('=')) -gt 0) {
+    $search  = -join ( $patch[0..$i-1].Split(' ') | %{ [char][byte]"0x$_" } )
+    $changes = $patch.Remove(0, $i+1).Split(' ') | %{ [byte]"0x$_" }
     $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
-    if (($offset = $text.IndexOf($search)) -lt 0) { throw "cannot find: $($patch.Split('=')[0])" }
+    if (($offset = $text.IndexOf($search)) -lt 0) { throw "cannot find: $($patch[0..$i-1])" }
   } else {
     $offset, $changes = $patch -split ':| ' | %{ [int64]"0x$_" }
   }
