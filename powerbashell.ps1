@@ -42,7 +42,7 @@ hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa
   while IFS=': ' read o hex ;do printf \\x${hex// /\\x} | patchdd "${!#}" 0x$o ;done
 )
 hex() { printf %s "$*" | sed -E 's/\b[0-9a-f]{2}\b/\\x\0/gi; s/ //g' ;} # prepend "\x" to pairs of hex digits and remove spaces in arguments
-find_offset() ( o=$(LANG=C sed ':0;$!{N;b0};'$(hex "s/${*:2}.*//;t;Q1") "$1" | wc -c) && echo $o || : )
+find_offset() ( o=$(LANG=C sed ':0;$!{N;b0};'$(hex "s/${*:2}.*//;t;Q1") <(cat "$1"; echo) | wc -c) && echo $((o-1)) || : )
 patch_file() { # find matched bytes and overwrite with patch bytes
   if [[ $2 =~ = ]] ;then
     [[ ! ${o=$(find_offset "$1" ${2%=*})} ]] && echo "cannot find: ${2%=*}" && exit
