@@ -17,18 +17,16 @@ main() {
     echo -e "${error:+\e[1;31m }${error:-\e[1;32m OK}" # show OK in green or show $error in red
   done
 }
-hash xxd || xxd() ( # emulate `xxd -r` and read data from stdin: `echo 123abc aa bb c d | xxd -r - filename`
-  patchdd() { dd seek=$(($2)) of="$1" bs=1 conv=notrunc status=none ;}
-  while IFS=': ' read o hex ;do printf \\x${hex// /\\x} | patchdd "${!#}" 0x$o ;done
-)
+patchdd() { dd seek=$(($2)) of="$1" bs=1 conv=notrunc status=none ;}
 hex() { printf %s "$*" | sed -E 's/\b5e\b/\\^/gi; s/\b[0-9a-f]{2}\b/[\\x\0]/gi; s/ //g' ;} # prepend "\x" and wrap with "[]" for pairs of hex digits and remove spaces in arguments (to escape special characters in sed replacement)
 find_offset() ( o=$(LANG=C sed ':0;$!{N;b0};'$(hex "s/${*:2}.*//;t;Q1") <(cat "$1"; echo) | wc -c) && echo $((o-1)) || : )
 patch_file() { # find matched bytes and overwrite with patch bytes
   if [[ $2 =~ = ]] ;then
     [[ ! ${o=$(find_offset "$1" ${2%=*})} ]] && echo "cannot find: ${2%=*}" && exit
-    b=$(printf %x $o):${2#*=}
+    patch="$(printf %x $o) ${2#*=}"
   fi
-  <<<"${b:-$2}" xxd -r -c256 - "$1"
+  args=(${patch:-${2/:/ }}) # read offset bytes <<<${patch:-${2/:/ }}
+  printf $(printf '\\x%s' ${args[*]:1}) | patchdd "$1" 0x${args[0]}
 }
 show_examples() {
   echo -e "\e[1;32m Lemme show ya how patches look like \e[0m"
