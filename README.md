@@ -25,7 +25,7 @@ Example of patching at specified offset with hex bytes:
       DECAFDAD : B0 BA  C0 FF EE
       # \xBAEBEE : FE EE  F1 F0
 
-Example of searching and replacing with hex bytes:
+Example of searching and overwriting with hex bytes (at the offset of found bytes):
 
       # \xFA CE  B0 0C  =0x0F F1 CE
        0xB0 0B=  D0 0D  0F  DE ED
