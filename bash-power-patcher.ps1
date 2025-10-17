@@ -62,10 +62,10 @@ function show_examples() { param($e = [char]0x1b)
 }
 function patch_file() { param($file, $patch)
   if (($i=$patch.IndexOf('=')) -gt 0) {
-    $search  = -join ( $patch[0..$i-1].Split(' ') | %{ [char][byte]"0x$_" } )
+    $search  = $patch[0..$i-1].Split(' ')        | %{ [byte]"0x$_" }
     $changes = $patch.Remove(0, $i+1).Split(' ') | %{ [byte]"0x$_" }
-    $text = [IO.File]::ReadAllText($file, [Text.Encoding]::GetEncoding(1256))
-    if (($offset = $text.IndexOf($search)) -lt 0) { throw "cannot find: $($patch[0..$i-1])" }
+    $text = [IO.File]::ReadAllText($file, ( $encoder = [Text.Encoding]::GetEncoding(1256) ))
+    if (($offset = $text.IndexOf($encoder.GetString($search))) -lt 0) { throw "cannot find: $($patch[0..$i-1])" }
   } else {
     $offset, $changes = $patch -split ':| ' | %{ [int64]"0x$_" }
   }
